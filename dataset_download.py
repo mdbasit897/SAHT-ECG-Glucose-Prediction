@@ -15,7 +15,7 @@ headers = {
 }
 
 # Download with streaming for large files
-print("Redownloading Dataset Files.zip from Springernature figshare com")
+print("Redownloading Dataset on electrocardiograph, sleep and metabolic function of male type 2 diabetes mellitus.zip from Mendeley Data")
 response = requests.get(url, headers=headers, stream=True)
 response.raise_for_status()  # Check for HTTP errors
 
@@ -49,4 +49,4 @@ else:
 print("\nIf automated download fails, manually download from:")
 print("1. Visit: https://prod-dcd-datasets-cache-zipfiles.s3.eu-west-1.amazonaws.com/9c47vwvtss-4.zip")
 print("2. Click 'Download' on Dataset on electrocardiograph, sleep and metabolic function of male type 2 diabetes mellitus.zip")
-print("3. Place the file in the notebook directory as 'uci2_dataset.zip' and rerun extraction.")
+print("3. Place the file in the notebook directory as 'Dataset on electrocardiograph, sleep and metabolic function of male type 2 diabetes mellitus.zip' and rerun extraction.")
