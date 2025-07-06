@@ -815,25 +815,6 @@ if __name__ == "__main__":
         print(
             f"   Elevated glucose: {np.sum(targets['glucose_elevated'])}/{len(targets['glucose_elevated'])} subjects ({np.sum(targets['glucose_elevated']) / len(targets['glucose_elevated']) * 100:.1f}%)")
 
-        print(f"\n🎯 RESEARCH READINESS ASSESSMENT:")
-        print("=" * 40)
-        print("✅ Sample size: EXCELLENT (40+ subjects)")
-        print("✅ Data quality: EXCELLENT (ECG scaling fixed)")
-        print("✅ Feature diversity: EXCELLENT (multi-modal)")
-        print("✅ Target availability: EXCELLENT (multiple formulations)")
-        print("✅ Methodology: ROBUST (proper validation)")
-
-        print(f"\n🚀 READY FOR MODEL DEVELOPMENT!")
-        print("   Next steps:")
-        print("   1. Implement baseline models (RF, XGBoost)")
-        print("   2. Develop Sleep-Aware Hierarchical Transformer")
-        print("   3. Conduct experiments and ablation studies")
-        print("   4. Prepare manuscript for publication")
-
-        print(f"\n🎯 PUBLICATION PROSPECTS: HIGH")
-        print("   Target journals: IEEE JBHI, Computers in Biology & Medicine")
-        print("   Novel contribution: Sleep-stage-aware glucose prediction")
-
     except Exception as e:
         print(f"\n❌ FATAL ERROR: {e}")
         print("Please check error messages above and fix issues.")
