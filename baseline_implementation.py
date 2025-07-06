@@ -68,20 +68,49 @@ class ComprehensiveBaselineAnalysis:
         print("📁 Loading processed dataset...")
 
         try:
+            # Check if data directory exists
+            if not self.data_dir.exists():
+                print(f"❌ Data directory does not exist: {self.data_dir}")
+                return False
+
+            # Check for required files
+            required_files = [
+                "FINAL_features.csv",
+                "FINAL_targets.json",
+                "FINAL_splits.npz",
+                "FINAL_feature_names.json"
+            ]
+
+            missing_files = []
+            for file in required_files:
+                if not (self.data_dir / file).exists():
+                    missing_files.append(file)
+
+            if missing_files:
+                print(f"❌ Missing required files: {missing_files}")
+                print(f"📁 Available files in {self.data_dir}:")
+                for file in self.data_dir.iterdir():
+                    print(f"   - {file.name}")
+                return False
+
             # Load features
+            print("   Loading features...")
             self.features = pd.read_csv(self.data_dir / "FINAL_features.csv")
 
             # Load targets
+            print("   Loading targets...")
             with open(self.data_dir / "FINAL_targets.json", 'r') as f:
                 targets_dict = json.load(f)
             self.targets = {k: np.array(v) for k, v in targets_dict.items()
                             if isinstance(v, list)}
 
-            # Load splits
-            splits_data = np.load(self.data_dir / "FINAL_splits.npz")
+            # Load splits (with allow_pickle=True to handle object arrays)
+            print("   Loading splits...")
+            splits_data = np.load(self.data_dir / "FINAL_splits.npz", allow_pickle=True)
             self.splits = {k: v for k, v in splits_data.items()}
 
             # Load feature names
+            print("   Loading feature names...")
             with open(self.data_dir / "FINAL_feature_names.json", 'r') as f:
                 self.feature_names = json.load(f)
 
@@ -89,59 +118,93 @@ class ComprehensiveBaselineAnalysis:
             print(f"   Subjects: {len(self.features)}")
             print(f"   Features: {len(self.feature_names)}")
             print(f"   Targets: {list(self.targets.keys())}")
-            print(f"   Splits: {len(self.splits['X_train'])}/{len(self.splits['X_val'])}/{len(self.splits['X_test'])}")
+
+            # Check split sizes
+            if 'X_train' in self.splits and 'X_val' in self.splits and 'X_test' in self.splits:
+                print(
+                    f"   Splits: {len(self.splits['X_train'])}/{len(self.splits['X_val'])}/{len(self.splits['X_test'])}")
+            else:
+                print(f"   Available split keys: {list(self.splits.keys())}")
 
             return True
 
         except Exception as e:
             print(f"❌ Error loading data: {e}")
+            print(f"📁 Checking data directory: {self.data_dir}")
+            if self.data_dir.exists():
+                print("   Available files:")
+                for file in self.data_dir.iterdir():
+                    print(f"     - {file.name}")
             return False
 
     def prepare_data_matrices(self):
         """Prepare standardized data matrices for modeling"""
         print("🔧 Preparing standardized data matrices...")
 
-        # Get feature columns (exclude non-features)
-        exclude_cols = ['subject_id', 'gender', 'Unnamed: 0'] + \
-                       [col for col in self.features.columns if any(term in col for term in
-                                                                    ['FBG', 'HbA1c', 'Diabetic', 'Coronary', 'Carotid',
-                                                                     'glucose'])]
+        try:
+            # Get feature columns (exclude non-features)
+            exclude_cols = ['subject_id', 'gender', 'Unnamed: 0'] + \
+                           [col for col in self.features.columns if any(term in col for term in
+                                                                        ['FBG', 'HbA1c', 'Diabetic', 'Coronary',
+                                                                         'Carotid',
+                                                                         'glucose'])]
 
-        feature_cols = [col for col in self.features.columns if col not in exclude_cols]
+            feature_cols = [col for col in self.features.columns if col not in exclude_cols]
+            print(f"   Selected {len(feature_cols)} feature columns")
 
-        # Extract feature matrix and handle missing values
-        X = self.features[feature_cols].fillna(0).values
+            # Extract feature matrix and handle missing values
+            X = self.features[feature_cols].fillna(0).values
+            print(f"   Feature matrix shape: {X.shape}")
 
-        # Standardize features
-        self.scaler = StandardScaler()
-        X_scaled = self.scaler.fit_transform(X)
+            # Check for any remaining non-numeric data
+            if not np.issubdtype(X.dtype, np.number):
+                print("   Converting non-numeric data...")
+                # Convert to numeric, forcing errors to NaN then to 0
+                X_numeric = []
+                for i in range(X.shape[1]):
+                    col_data = pd.to_numeric(X[:, i], errors='coerce')
+                    col_data = np.nan_to_num(col_data, nan=0.0)
+                    X_numeric.append(col_data)
+                X = np.column_stack(X_numeric)
 
-        # Create train/val/test splits
-        n_train = len(self.splits['X_train'])
-        n_val = len(self.splits['X_val'])
+            # Standardize features
+            self.scaler = StandardScaler()
+            X_scaled = self.scaler.fit_transform(X)
 
-        self.X_train = X_scaled[:n_train]
-        self.X_val = X_scaled[n_train:n_train + n_val]
-        self.X_test = X_scaled[n_train + n_val:]
+            # Create train/val/test splits
+            n_train = len(self.splits['X_train'])
+            n_val = len(self.splits['X_val'])
 
-        # Extract targets for each split
-        self.y_splits = {}
-        for target_name in ['primary_glucose', 'glucose_control', 'glucose_elevated']:
-            if target_name in self.targets:
-                y = self.targets[target_name]
-                self.y_splits[target_name] = {
-                    'train': y[:n_train],
-                    'val': y[n_train:n_train + n_val],
-                    'test': y[n_train + n_val:]
-                }
+            self.X_train = X_scaled[:n_train]
+            self.X_val = X_scaled[n_train:n_train + n_val]
+            self.X_test = X_scaled[n_train + n_val:]
 
-        print(f"✅ Data matrices prepared:")
-        print(f"   Feature matrix: {X_scaled.shape}")
-        print(f"   Train: {self.X_train.shape}")
-        print(f"   Validation: {self.X_val.shape}")
-        print(f"   Test: {self.X_test.shape}")
+            # Extract targets for each split
+            self.y_splits = {}
+            for target_name in ['primary_glucose', 'glucose_control', 'glucose_elevated']:
+                if target_name in self.targets:
+                    y = self.targets[target_name]
+                    if len(y) >= (n_train + n_val):
+                        self.y_splits[target_name] = {
+                            'train': y[:n_train],
+                            'val': y[n_train:n_train + n_val],
+                            'test': y[n_train + n_val:]
+                        }
+                    else:
+                        print(f"   ⚠️ Target {target_name} has insufficient data: {len(y)}")
 
-        return feature_cols
+            print(f"✅ Data matrices prepared:")
+            print(f"   Feature matrix: {X_scaled.shape}")
+            print(f"   Train: {self.X_train.shape}")
+            print(f"   Validation: {self.X_val.shape}")
+            print(f"   Test: {self.X_test.shape}")
+            print(f"   Available targets: {list(self.y_splits.keys())}")
+
+            return feature_cols
+
+        except Exception as e:
+            print(f"❌ Error preparing data matrices: {e}")
+            return None
 
     def initialize_baseline_models(self):
         """Initialize comprehensive set of baseline models"""
@@ -154,7 +217,7 @@ class ComprehensiveBaselineAnalysis:
             'Lasso Regression': Lasso(alpha=0.1),
             'Random Forest': RandomForestRegressor(n_estimators=100, random_state=42),
             'Gradient Boosting': GradientBoostingRegressor(n_estimators=100, random_state=42),
-            'XGBoost': xgb.XGBRegressor(n_estimators=100, random_state=42),
+            'XGBoost': xgb.XGBRegressor(n_estimators=100, random_state=42, verbosity=0),
             'Support Vector Regression': SVR(kernel='rbf', C=1.0),
             'K-Nearest Neighbors': KNeighborsRegressor(n_neighbors=5),
             'Decision Tree': DecisionTreeRegressor(random_state=42),
@@ -163,10 +226,10 @@ class ComprehensiveBaselineAnalysis:
 
         # Classification models for categorical predictions
         self.classification_models = {
-            'Logistic Regression': LogisticRegression(random_state=42),
+            'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
             'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42),
             'Gradient Boosting': GradientBoostingClassifier(n_estimators=100, random_state=42),
-            'XGBoost': xgb.XGBClassifier(n_estimators=100, random_state=42),
+            'XGBoost': xgb.XGBClassifier(n_estimators=100, random_state=42, verbosity=0),
             'Support Vector Classifier': SVC(kernel='rbf', C=1.0, probability=True, random_state=42),
             'K-Nearest Neighbors': KNeighborsClassifier(n_neighbors=5),
             'Decision Tree': DecisionTreeClassifier(random_state=42),
@@ -181,6 +244,10 @@ class ComprehensiveBaselineAnalysis:
         print("📈 Evaluating regression models for primary glucose prediction...")
 
         target_name = 'primary_glucose'
+        if target_name not in self.y_splits:
+            print(f"❌ Target {target_name} not available")
+            return None
+
         y_train = self.y_splits[target_name]['train']
         y_val = self.y_splits[target_name]['val']
         y_test = self.y_splits[target_name]['test']
@@ -253,9 +320,15 @@ class ComprehensiveBaselineAnalysis:
                 elif hasattr(model, 'coef_'):
                     self.feature_importance[model_name] = np.abs(model.coef_)
 
+                print(f"     R²: {test_r2:.3f}, MAE: {test_mae:.3f}")
+
             except Exception as e:
                 print(f"   ⚠️ Error with {model_name}: {e}")
                 continue
+
+        if not results:
+            print("❌ No models completed successfully")
+            return None
 
         self.regression_results = {
             'results_df': pd.DataFrame(results),
@@ -273,6 +346,7 @@ class ComprehensiveBaselineAnalysis:
 
         for target_name in ['glucose_control', 'glucose_elevated']:
             if target_name not in self.y_splits:
+                print(f"   ⚠️ Target {target_name} not available, skipping...")
                 continue
 
             print(f"   Evaluating {target_name}...")
@@ -280,6 +354,12 @@ class ComprehensiveBaselineAnalysis:
             y_train = self.y_splits[target_name]['train']
             y_val = self.y_splits[target_name]['val']
             y_test = self.y_splits[target_name]['test']
+
+            # Check if we have valid classification targets
+            unique_train = np.unique(y_train)
+            if len(unique_train) < 2:
+                print(f"   ⚠️ Insufficient classes in {target_name} training data: {unique_train}")
+                continue
 
             target_results = []
             target_predictions = {}
@@ -313,22 +393,27 @@ class ComprehensiveBaselineAnalysis:
                     val_f1 = f1_score(y_val, y_val_pred, average='weighted')
                     test_f1 = f1_score(y_test, y_test_pred, average='weighted')
 
-                    # AUC for binary classification
-                    if target_name == 'glucose_elevated':
-                        if y_train_proba is not None:
-                            train_auc = roc_auc_score(y_train, y_train_proba[:, 1])
-                            val_auc = roc_auc_score(y_val, y_val_proba[:, 1])
-                            test_auc = roc_auc_score(y_test, y_test_proba[:, 1])
+                    # AUC calculation
+                    try:
+                        if target_name == 'glucose_elevated' and len(unique_train) == 2:
+                            # Binary classification
+                            if y_train_proba is not None:
+                                train_auc = roc_auc_score(y_train, y_train_proba[:, 1])
+                                val_auc = roc_auc_score(y_val, y_val_proba[:, 1])
+                                test_auc = roc_auc_score(y_test, y_test_proba[:, 1])
+                            else:
+                                train_auc = val_auc = test_auc = np.nan
                         else:
-                            train_auc = val_auc = test_auc = np.nan
-                    else:
-                        # Multi-class AUC
-                        if y_train_proba is not None:
-                            train_auc = roc_auc_score(y_train, y_train_proba, multi_class='ovr')
-                            val_auc = roc_auc_score(y_val, y_val_proba, multi_class='ovr')
-                            test_auc = roc_auc_score(y_test, y_test_proba, multi_class='ovr')
-                        else:
-                            train_auc = val_auc = test_auc = np.nan
+                            # Multi-class AUC
+                            if y_train_proba is not None:
+                                train_auc = roc_auc_score(y_train, y_train_proba, multi_class='ovr')
+                                val_auc = roc_auc_score(y_val, y_val_proba, multi_class='ovr')
+                                test_auc = roc_auc_score(y_test, y_test_proba, multi_class='ovr')
+                            else:
+                                train_auc = val_auc = test_auc = np.nan
+                    except Exception as auc_error:
+                        print(f"     ⚠️ AUC calculation failed for {model_name}: {auc_error}")
+                        train_auc = val_auc = test_auc = np.nan
 
                     # Cross-validation
                     cv_scores = cross_val_score(model, self.X_train, y_train,
@@ -367,17 +452,20 @@ class ComprehensiveBaselineAnalysis:
                         'test_proba': y_test_proba
                     }
 
+                    print(f"     {model_name}: Acc={test_acc:.3f}, F1={test_f1:.3f}")
+
                 except Exception as e:
                     print(f"   ⚠️ Error with {model_name} for {target_name}: {e}")
                     continue
 
-            results[target_name] = {
-                'results_df': pd.DataFrame(target_results),
-                'predictions': target_predictions
-            }
+            if target_results:
+                results[target_name] = {
+                    'results_df': pd.DataFrame(target_results),
+                    'predictions': target_predictions
+                }
 
         self.classification_results = results
-        print(f"✅ Completed classification evaluation")
+        print(f"✅ Completed classification evaluation for {len(results)} targets")
         return self.classification_results
 
     def create_performance_visualizations(self):
@@ -389,34 +477,46 @@ class ComprehensiveBaselineAnalysis:
         output_dir.mkdir(exist_ok=True)
 
         # 1. Regression Performance Summary
-        self._plot_regression_performance(output_dir)
+        if self.regression_results:
+            self._plot_regression_performance(output_dir)
 
         # 2. Classification Performance Summary
-        self._plot_classification_performance(output_dir)
+        if self.classification_results:
+            self._plot_classification_performance(output_dir)
 
         # 3. Model Comparison Heatmaps
         self._plot_performance_heatmaps(output_dir)
 
         # 4. Prediction vs Actual Plots
-        self._plot_prediction_scatter(output_dir)
+        if self.regression_results:
+            self._plot_prediction_scatter(output_dir)
 
         # 5. Feature Importance Analysis
-        self._plot_feature_importance(output_dir)
+        if self.feature_importance:
+            self._plot_feature_importance(output_dir)
 
         # 6. Error Analysis
-        self._plot_error_analysis(output_dir)
+        if self.regression_results:
+            self._plot_error_analysis(output_dir)
 
         # 7. Cross-Validation Analysis
-        self._plot_cross_validation_analysis(output_dir)
+        if self.regression_results:
+            self._plot_cross_validation_analysis(output_dir)
 
         # 8. Clinical Interpretation Plots
-        self._plot_clinical_interpretation(output_dir)
+        if self.regression_results:
+            self._plot_clinical_interpretation(output_dir)
 
         print(f"✅ All visualizations saved to: {output_dir}")
 
     def _plot_regression_performance(self, output_dir):
         """Plot comprehensive regression performance analysis"""
+        if not self.regression_results or 'results_df' not in self.regression_results:
+            return
+
         df = self.regression_results['results_df'].copy()
+        if df.empty:
+            return
 
         # Sort by validation performance
         df = df.sort_values('Val_R2', ascending=True)
@@ -466,8 +566,12 @@ class ComprehensiveBaselineAnalysis:
     def _plot_classification_performance(self, output_dir):
         """Plot comprehensive classification performance analysis"""
         for target_name, results in self.classification_results.items():
+            if 'results_df' not in results or results['results_df'].empty:
+                continue
+
             df = results['results_df'].copy()
-            df = df.sort_values('Test_AUC', ascending=True)
+            # Sort by AUC, handling NaN values
+            df = df.sort_values('Test_AUC', ascending=True, na_position='first')
 
             fig, axes = plt.subplots(2, 2, figsize=(16, 12))
             fig.suptitle(f'Classification Performance - {target_name.replace("_", " ").title()}',
@@ -479,11 +583,16 @@ class ComprehensiveBaselineAnalysis:
             axes[0, 0].set_title('Test Set Accuracy')
             axes[0, 0].grid(True, alpha=0.3)
 
-            # AUC comparison
-            axes[0, 1].barh(df['Model'], df['Test_AUC'], color='orange', alpha=0.7)
-            axes[0, 1].set_xlabel('AUC Score')
-            axes[0, 1].set_title('Test Set AUC')
-            axes[0, 1].grid(True, alpha=0.3)
+            # AUC comparison (skip if all NaN)
+            if not df['Test_AUC'].isna().all():
+                valid_auc = df.dropna(subset=['Test_AUC'])
+                axes[0, 1].barh(valid_auc['Model'], valid_auc['Test_AUC'], color='orange', alpha=0.7)
+                axes[0, 1].set_xlabel('AUC Score')
+                axes[0, 1].set_title('Test Set AUC')
+                axes[0, 1].grid(True, alpha=0.3)
+            else:
+                axes[0, 1].text(0.5, 0.5, 'AUC not available', ha='center', va='center',
+                                transform=axes[0, 1].transAxes)
 
             # F1 Score comparison
             axes[1, 0].barh(df['Model'], df['Test_F1'], color='purple', alpha=0.7)
@@ -509,24 +618,28 @@ class ComprehensiveBaselineAnalysis:
     def _plot_performance_heatmaps(self, output_dir):
         """Create performance comparison heatmaps"""
         # Regression heatmap
-        df_reg = self.regression_results['results_df'].copy()
+        if self.regression_results and 'results_df' in self.regression_results:
+            df_reg = self.regression_results['results_df'].copy()
+            if not df_reg.empty:
+                # Select key metrics for heatmap
+                metrics = ['Train_R2', 'Val_R2', 'Test_R2', 'Train_MAE', 'Val_MAE', 'Test_MAE']
+                heatmap_data = df_reg.set_index('Model')[metrics]
 
-        # Select key metrics for heatmap
-        metrics = ['Train_R2', 'Val_R2', 'Test_R2', 'Train_MAE', 'Val_MAE', 'Test_MAE']
-        heatmap_data = df_reg.set_index('Model')[metrics]
-
-        plt.figure(figsize=(12, 8))
-        sns.heatmap(heatmap_data, annot=True, cmap='RdYlBu_r', center=0,
-                    fmt='.3f', cbar_kws={'label': 'Performance Score'})
-        plt.title('Regression Model Performance Heatmap', fontsize=16, fontweight='bold')
-        plt.xlabel('Metrics')
-        plt.ylabel('Models')
-        plt.tight_layout()
-        plt.savefig(output_dir / 'regression_performance_heatmap.png', dpi=300, bbox_inches='tight')
-        plt.close()
+                plt.figure(figsize=(12, 8))
+                sns.heatmap(heatmap_data, annot=True, cmap='RdYlBu_r', center=0,
+                            fmt='.3f', cbar_kws={'label': 'Performance Score'})
+                plt.title('Regression Model Performance Heatmap', fontsize=16, fontweight='bold')
+                plt.xlabel('Metrics')
+                plt.ylabel('Models')
+                plt.tight_layout()
+                plt.savefig(output_dir / 'regression_performance_heatmap.png', dpi=300, bbox_inches='tight')
+                plt.close()
 
         # Classification heatmaps
         for target_name, results in self.classification_results.items():
+            if 'results_df' not in results or results['results_df'].empty:
+                continue
+
             df_clf = results['results_df'].copy()
 
             metrics = ['Train_Acc', 'Val_Acc', 'Test_Acc', 'Train_AUC', 'Val_AUC', 'Test_AUC']
@@ -546,17 +659,25 @@ class ComprehensiveBaselineAnalysis:
 
     def _plot_prediction_scatter(self, output_dir):
         """Create prediction vs actual scatter plots"""
+        if not self.regression_results or 'predictions' not in self.regression_results:
+            return
+
         predictions = self.regression_results['predictions']
+        if not predictions:
+            return
 
         # Get best performing models
         df = self.regression_results['results_df']
-        best_models = df.nlargest(3, 'Test_R2')['Model'].tolist()
+        best_models = df.nlargest(min(3, len(df)), 'Test_R2')['Model'].tolist()
 
         fig, axes = plt.subplots(1, len(best_models), figsize=(6 * len(best_models), 6))
         if len(best_models) == 1:
             axes = [axes]
 
         for i, model_name in enumerate(best_models):
+            if model_name not in predictions:
+                continue
+
             pred_data = predictions[model_name]
 
             # Plot test set predictions
@@ -606,7 +727,8 @@ class ComprehensiveBaselineAnalysis:
 
             # Get top 20 features
             top_indices = np.argsort(importance)[-20:]
-            top_features = [self.feature_names[j] for j in top_indices]
+            top_features = [self.feature_names[j] if j < len(self.feature_names) else f'Feature_{j}'
+                            for j in top_indices]
             top_importance = importance[top_indices]
 
             axes[i].barh(range(len(top_features)), top_importance)
@@ -623,11 +745,20 @@ class ComprehensiveBaselineAnalysis:
 
     def _plot_error_analysis(self, output_dir):
         """Create error analysis visualizations"""
+        if not self.regression_results or 'predictions' not in self.regression_results:
+            return
+
         predictions = self.regression_results['predictions']
+        if not predictions:
+            return
 
         # Get best model
         df = self.regression_results['results_df']
         best_model = df.loc[df['Test_R2'].idxmax(), 'Model']
+
+        if best_model not in predictions:
+            return
+
         pred_data = predictions[best_model]
 
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
@@ -651,18 +782,26 @@ class ComprehensiveBaselineAnalysis:
         axes[0, 1].grid(True, alpha=0.3)
 
         # Q-Q plot for normality check
-        from scipy.stats import probplot
-        probplot(errors, dist="norm", plot=axes[1, 0])
-        axes[1, 0].set_title('Q-Q Plot - Error Normality')
-        axes[1, 0].grid(True, alpha=0.3)
+        try:
+            from scipy.stats import probplot
+            probplot(errors, dist="norm", plot=axes[1, 0])
+            axes[1, 0].set_title('Q-Q Plot - Error Normality')
+            axes[1, 0].grid(True, alpha=0.3)
+        except:
+            axes[1, 0].text(0.5, 0.5, 'Q-Q plot unavailable', ha='center', va='center',
+                            transform=axes[1, 0].transAxes)
 
         # Error by glucose range
-        glucose_ranges = pd.cut(pred_data['test_true'], bins=3, labels=['Low', 'Medium', 'High'])
-        error_by_range = pd.DataFrame({'Range': glucose_ranges, 'Error': np.abs(errors)})
-        error_by_range.boxplot(column='Error', by='Range', ax=axes[1, 1])
-        axes[1, 1].set_xlabel('Glucose Range')
-        axes[1, 1].set_ylabel('Absolute Error (mmol/L)')
-        axes[1, 1].set_title('Error by Glucose Range')
+        try:
+            glucose_ranges = pd.cut(pred_data['test_true'], bins=3, labels=['Low', 'Medium', 'High'])
+            error_by_range = pd.DataFrame({'Range': glucose_ranges, 'Error': np.abs(errors)})
+            error_by_range.boxplot(column='Error', by='Range', ax=axes[1, 1])
+            axes[1, 1].set_xlabel('Glucose Range')
+            axes[1, 1].set_ylabel('Absolute Error (mmol/L)')
+            axes[1, 1].set_title('Error by Glucose Range')
+        except:
+            axes[1, 1].text(0.5, 0.5, 'Range analysis unavailable', ha='center', va='center',
+                            transform=axes[1, 1].transAxes)
 
         plt.tight_layout()
         plt.savefig(output_dir / 'error_analysis.png', dpi=300, bbox_inches='tight')
@@ -670,7 +809,12 @@ class ComprehensiveBaselineAnalysis:
 
     def _plot_cross_validation_analysis(self, output_dir):
         """Create cross-validation analysis"""
+        if not self.regression_results or 'results_df' not in self.regression_results:
+            return
+
         df = self.regression_results['results_df'].copy()
+        if df.empty:
+            return
 
         # Sort by CV performance
         df = df.sort_values('CV_MAE')
@@ -700,10 +844,20 @@ class ComprehensiveBaselineAnalysis:
 
     def _plot_clinical_interpretation(self, output_dir):
         """Create clinical interpretation visualizations"""
+        if not self.regression_results or 'predictions' not in self.regression_results:
+            return
+
         # Clinical significance analysis
         predictions = self.regression_results['predictions']
+        if not predictions:
+            return
+
         df = self.regression_results['results_df']
         best_model = df.loc[df['Test_R2'].idxmax(), 'Model']
+
+        if best_model not in predictions:
+            return
+
         pred_data = predictions[best_model]
 
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
@@ -742,26 +896,28 @@ class ComprehensiveBaselineAnalysis:
         pred_categories = categorize_glucose(y_pred)
 
         # Confusion matrix for clinical categories
-        from sklearn.metrics import confusion_matrix
-        cm = confusion_matrix(true_categories, pred_categories,
-                              labels=['Good Control', 'Fair Control', 'Poor Control'])
+        try:
+            from sklearn.metrics import confusion_matrix
+            cm = confusion_matrix(true_categories, pred_categories,
+                                  labels=['Good Control', 'Fair Control', 'Poor Control'])
 
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=axes[0, 1],
-                    xticklabels=['Good Control', 'Fair Control', 'Poor Control'],
-                    yticklabels=['Good Control', 'Fair Control', 'Poor Control'])
-        axes[0, 1].set_xlabel('Predicted Category')
-        axes[0, 1].set_ylabel('Actual Category')
-        axes[0, 1].set_title('Clinical Category Prediction')
+            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=axes[0, 1],
+                        xticklabels=['Good Control', 'Fair Control', 'Poor Control'],
+                        yticklabels=['Good Control', 'Fair Control', 'Poor Control'])
+            axes[0, 1].set_xlabel('Predicted Category')
+            axes[0, 1].set_ylabel('Actual Category')
+            axes[0, 1].set_title('Clinical Category Prediction')
+        except:
+            axes[0, 1].text(0.5, 0.5, 'Category analysis unavailable', ha='center', va='center',
+                            transform=axes[0, 1].transAxes)
 
-        # Error by patient characteristics (if available)
-        # This is a placeholder - would need actual patient data
+        # Error by patient characteristics (placeholder)
         axes[1, 0].text(0.5, 0.5, 'Patient Subgroup Analysis\n(Requires additional\nclinical metadata)',
                         ha='center', va='center', transform=axes[1, 0].transAxes,
                         fontsize=14, style='italic')
         axes[1, 0].set_title('Error by Patient Subgroups')
 
         # Clinical decision support
-        # Show how predictions could be used in practice
         decision_ranges = ['Hypoglycemia Risk\n(<4.0)', 'Target Range\n(4.0-7.0)',
                            'Mild Elevation\n(7.0-10.0)', 'Severe Elevation\n(>10.0)']
 
@@ -772,8 +928,13 @@ class ComprehensiveBaselineAnalysis:
             np.sum(y_pred >= 10.0)
         ]
 
-        axes[1, 1].pie(pred_counts, labels=decision_ranges, autopct='%1.1f%%')
-        axes[1, 1].set_title('Predicted Glucose Distribution\n(Clinical Decision Support)')
+        # Only plot if we have non-zero counts
+        if sum(pred_counts) > 0:
+            axes[1, 1].pie(pred_counts, labels=decision_ranges, autopct='%1.1f%%')
+            axes[1, 1].set_title('Predicted Glucose Distribution\n(Clinical Decision Support)')
+        else:
+            axes[1, 1].text(0.5, 0.5, 'No valid predictions', ha='center', va='center',
+                            transform=axes[1, 1].transAxes)
 
         plt.tight_layout()
         plt.savefig(output_dir / 'clinical_interpretation.png', dpi=300, bbox_inches='tight')
@@ -801,125 +962,151 @@ class ComprehensiveBaselineAnalysis:
         report.append("")
 
         # Regression results
-        report.append("## REGRESSION RESULTS (Primary Glucose Prediction)")
-        report.append("-" * 30)
-        df_reg = self.regression_results['results_df']
+        if self.regression_results and 'results_df' in self.regression_results:
+            report.append("## REGRESSION RESULTS (Primary Glucose Prediction)")
+            report.append("-" * 30)
+            df_reg = self.regression_results['results_df']
 
-        # Best performing models
-        best_r2 = df_reg.loc[df_reg['Test_R2'].idxmax()]
-        best_mae = df_reg.loc[df_reg['Test_MAE'].idxmin()]
+            if not df_reg.empty:
+                # Best performing models
+                best_r2 = df_reg.loc[df_reg['Test_R2'].idxmax()]
+                best_mae = df_reg.loc[df_reg['Test_MAE'].idxmin()]
 
-        report.append(f"Best R² Score: {best_r2['Model']} (R² = {best_r2['Test_R2']:.3f})")
-        report.append(f"Best MAE: {best_mae['Model']} (MAE = {best_mae['Test_MAE']:.3f} mmol/L)")
-        report.append("")
+                report.append(f"Best R² Score: {best_r2['Model']} (R² = {best_r2['Test_R2']:.3f})")
+                report.append(f"Best MAE: {best_mae['Model']} (MAE = {best_mae['Test_MAE']:.3f} mmol/L)")
+                report.append("")
 
-        # Top 5 models table
-        top_models = df_reg.nlargest(5, 'Test_R2')[['Model', 'Test_R2', 'Test_MAE', 'Test_RMSE', 'CV_MAE']]
-        report.append("### Top 5 Models by Test R²:")
-        report.append(top_models.to_string(index=False))
-        report.append("")
+                # Top 5 models table
+                top_models = df_reg.nlargest(min(5, len(df_reg)), 'Test_R2')[
+                    ['Model', 'Test_R2', 'Test_MAE', 'Test_RMSE', 'CV_MAE']]
+                report.append("### Top 5 Models by Test R²:")
+                report.append(top_models.to_string(index=False))
+                report.append("")
 
-        # Statistical significance testing
-        report.append("### Statistical Analysis:")
+                # Statistical significance testing
+                report.append("### Statistical Analysis:")
 
-        # Get predictions from best two models for comparison
-        if len(df_reg) >= 2:
-            model1 = df_reg.iloc[0]['Model']
-            model2 = df_reg.iloc[1]['Model']
+                # Get predictions from best two models for comparison
+                if len(df_reg) >= 2 and self.regression_results.get('predictions'):
+                    model1 = df_reg.iloc[0]['Model']
+                    model2 = df_reg.iloc[1]['Model']
 
-            pred1 = self.regression_results['predictions'][model1]['test_pred']
-            pred2 = self.regression_results['predictions'][model2]['test_pred']
-            y_true = self.regression_results['predictions'][model1]['test_true']
+                    predictions = self.regression_results['predictions']
+                    if model1 in predictions and model2 in predictions:
+                        pred1 = predictions[model1]['test_pred']
+                        pred2 = predictions[model2]['test_pred']
+                        y_true = predictions[model1]['test_true']
 
-            err1 = np.abs(pred1 - y_true)
-            err2 = np.abs(pred2 - y_true)
+                        err1 = np.abs(pred1 - y_true)
+                        err2 = np.abs(pred2 - y_true)
 
-            # Paired t-test
-            stat, p_value = ttest_rel(err1, err2)
-            report.append(f"Paired t-test between {model1} and {model2}:")
-            report.append(f"  t-statistic: {stat:.3f}, p-value: {p_value:.3f}")
+                        # Paired t-test
+                        try:
+                            stat, p_value = ttest_rel(err1, err2)
+                            report.append(f"Paired t-test between {model1} and {model2}:")
+                            report.append(f"  t-statistic: {stat:.3f}, p-value: {p_value:.3f}")
 
-            if p_value < 0.05:
-                better_model = model1 if np.mean(err1) < np.mean(err2) else model2
-                report.append(f"  Significant difference (p < 0.05): {better_model} performs better")
-            else:
-                report.append(f"  No significant difference (p ≥ 0.05)")
+                            if p_value < 0.05:
+                                better_model = model1 if np.mean(err1) < np.mean(err2) else model2
+                                report.append(f"  Significant difference (p < 0.05): {better_model} performs better")
+                            else:
+                                report.append(f"  No significant difference (p ≥ 0.05)")
+                        except Exception as e:
+                            report.append(f"  Statistical test failed: {e}")
 
-        report.append("")
+                report.append("")
 
         # Classification results
         for target_name, results in self.classification_results.items():
+            if 'results_df' not in results or results['results_df'].empty:
+                continue
+
             report.append(f"## CLASSIFICATION RESULTS ({target_name.replace('_', ' ').title()})")
             report.append("-" * 30)
 
             df_clf = results['results_df']
 
             # Best performing models
-            best_auc = df_clf.loc[df_clf['Test_AUC'].idxmax()]
-            best_acc = df_clf.loc[df_clf['Test_Acc'].idxmax()]
+            if not df_clf['Test_AUC'].isna().all():
+                best_auc = df_clf.loc[df_clf['Test_AUC'].idxmax()]
+                report.append(f"Best AUC: {best_auc['Model']} (AUC = {best_auc['Test_AUC']:.3f})")
 
-            report.append(f"Best AUC: {best_auc['Model']} (AUC = {best_auc['Test_AUC']:.3f})")
+            best_acc = df_clf.loc[df_clf['Test_Acc'].idxmax()]
             report.append(f"Best Accuracy: {best_acc['Model']} (Acc = {best_acc['Test_Acc']:.3f})")
             report.append("")
 
             # Top 5 models
-            top_models = df_clf.nlargest(5, 'Test_AUC')[['Model', 'Test_Acc', 'Test_F1', 'Test_AUC']]
-            report.append("### Top 5 Models by Test AUC:")
+            if not df_clf['Test_AUC'].isna().all():
+                top_models = df_clf.nlargest(min(5, len(df_clf)), 'Test_AUC')[
+                    ['Model', 'Test_Acc', 'Test_F1', 'Test_AUC']]
+            else:
+                top_models = df_clf.nlargest(min(5, len(df_clf)), 'Test_Acc')[['Model', 'Test_Acc', 'Test_F1']]
+
+            report.append("### Top 5 Models:")
             report.append(top_models.to_string(index=False))
             report.append("")
 
         # Clinical interpretation
-        report.append("## CLINICAL INTERPRETATION")
-        report.append("-" * 30)
+        if self.regression_results and 'predictions' in self.regression_results:
+            predictions = self.regression_results['predictions']
+            if predictions:
+                report.append("## CLINICAL INTERPRETATION")
+                report.append("-" * 30)
 
-        # Best regression model for clinical analysis
-        best_model = df_reg.loc[df_reg['Test_R2'].idxmax(), 'Model']
-        pred_data = self.regression_results['predictions'][best_model]
+                # Best regression model for clinical analysis
+                df_reg = self.regression_results['results_df']
+                best_model = df_reg.loc[df_reg['Test_R2'].idxmax(), 'Model']
 
-        errors = np.abs(pred_data['test_pred'] - pred_data['test_true'])
+                if best_model in predictions:
+                    pred_data = predictions[best_model]
 
-        report.append(f"Analysis based on best performing model: {best_model}")
-        report.append("")
-        report.append("Clinical Acceptance Rates:")
+                    errors = np.abs(pred_data['test_pred'] - pred_data['test_true'])
 
-        thresholds = [0.5, 1.0, 1.5, 2.0]
-        for threshold in thresholds:
-            rate = np.mean(errors <= threshold) * 100
-            report.append(f"  Predictions within ±{threshold} mmol/L: {rate:.1f}%")
+                    report.append(f"Analysis based on best performing model: {best_model}")
+                    report.append("")
+                    report.append("Clinical Acceptance Rates:")
 
-        report.append("")
+                    thresholds = [0.5, 1.0, 1.5, 2.0]
+                    for threshold in thresholds:
+                        rate = np.mean(errors <= threshold) * 100
+                        report.append(f"  Predictions within ±{threshold} mmol/L: {rate:.1f}%")
 
-        # Glucose range analysis
-        y_true = pred_data['test_true']
-        report.append("Glucose Range Analysis:")
-        report.append(f"  Mean actual glucose: {np.mean(y_true):.1f} ± {np.std(y_true):.1f} mmol/L")
-        report.append(f"  Range: {np.min(y_true):.1f} - {np.max(y_true):.1f} mmol/L")
+                    report.append("")
 
-        # Clinical categories
-        good_control = np.sum(y_true < 7.0)
-        fair_control = np.sum((y_true >= 7.0) & (y_true < 8.5))
-        poor_control = np.sum(y_true >= 8.5)
+                    # Glucose range analysis
+                    y_true = pred_data['test_true']
+                    report.append("Glucose Range Analysis:")
+                    report.append(f"  Mean actual glucose: {np.mean(y_true):.1f} ± {np.std(y_true):.1f} mmol/L")
+                    report.append(f"  Range: {np.min(y_true):.1f} - {np.max(y_true):.1f} mmol/L")
 
-        report.append(
-            f"  Good control (<7.0 mmol/L): {good_control} subjects ({good_control / len(y_true) * 100:.1f}%)")
-        report.append(
-            f"  Fair control (7.0-8.5 mmol/L): {fair_control} subjects ({fair_control / len(y_true) * 100:.1f}%)")
-        report.append(
-            f"  Poor control (>8.5 mmol/L): {poor_control} subjects ({poor_control / len(y_true) * 100:.1f}%)")
+                    # Clinical categories
+                    good_control = np.sum(y_true < 7.0)
+                    fair_control = np.sum((y_true >= 7.0) & (y_true < 8.5))
+                    poor_control = np.sum(y_true >= 8.5)
 
-        report.append("")
+                    report.append(
+                        f"  Good control (<7.0 mmol/L): {good_control} subjects ({good_control / len(y_true) * 100:.1f}%)")
+                    report.append(
+                        f"  Fair control (7.0-8.5 mmol/L): {fair_control} subjects ({fair_control / len(y_true) * 100:.1f}%)")
+                    report.append(
+                        f"  Poor control (>8.5 mmol/L): {poor_control} subjects ({poor_control / len(y_true) * 100:.1f}%)")
+
+                    report.append("")
 
         # Recommendations for Sleep-Aware Transformer
         report.append("## RECOMMENDATIONS FOR SLEEP-AWARE TRANSFORMER")
         report.append("-" * 30)
 
-        best_mae = df_reg['Test_MAE'].min()
-        best_r2 = df_reg['Test_R2'].max()
+        if self.regression_results and 'results_df' in self.regression_results:
+            df_reg = self.regression_results['results_df']
+            if not df_reg.empty:
+                best_mae = df_reg['Test_MAE'].min()
+                best_r2 = df_reg['Test_R2'].max()
 
-        report.append("Performance Targets to Exceed:")
-        report.append(f"  Target MAE: < {best_mae:.3f} mmol/L")
-        report.append(f"  Target R²: > {best_r2:.3f}")
-        report.append("")
+                report.append("Performance Targets to Exceed:")
+                report.append(f"  Target MAE: < {best_mae:.3f} mmol/L")
+                report.append(f"  Target R²: > {best_r2:.3f}")
+                report.append("")
 
         report.append("Key Findings for Novel Architecture:")
 
@@ -942,13 +1129,13 @@ class ComprehensiveBaselineAnalysis:
 
                 report.append("   Top 10 most important features:")
                 for idx in reversed(top_features_idx):
-                    feature_name = self.feature_names[idx]
+                    feature_name = self.feature_names[idx] if idx < len(self.feature_names) else f'Feature_{idx}'
                     importance_val = avg_importance[idx]
 
                     # Categorize feature
-                    if 'ecg_' in feature_name:
+                    if 'ecg_' in feature_name.lower():
                         category = "ECG"
-                    elif 'hrv_' in feature_name:
+                    elif 'hrv_' in feature_name.lower():
                         category = "HRV"
                     elif 'sleep' in feature_name.lower():
                         category = "Sleep"
@@ -991,13 +1178,19 @@ class ComprehensiveBaselineAnalysis:
 
         # Prepare data matrices
         feature_cols = self.prepare_data_matrices()
+        if feature_cols is None:
+            return False
 
         # Initialize models
         self.initialize_baseline_models()
 
         # Evaluate models
-        self.evaluate_regression_models()
-        self.evaluate_classification_models()
+        regression_success = self.evaluate_regression_models()
+        classification_success = self.evaluate_classification_models()
+
+        if regression_success is None and not classification_success:
+            print("❌ All model evaluations failed")
+            return False
 
         # Create visualizations
         self.create_performance_visualizations()
@@ -1008,7 +1201,7 @@ class ComprehensiveBaselineAnalysis:
         print("\n🎉 BASELINE ANALYSIS COMPLETED SUCCESSFULLY!")
         print("=" * 60)
         print("📁 Results saved to: baseline_results/")
-        print("📊 Visualizations: 8 comprehensive plots created")
+        print("📊 Visualizations: Multiple comprehensive plots created")
         print("📈 Statistical report: comprehensive_baseline_report.txt")
         print("")
         print("🎯 READY FOR SLEEP-AWARE TRANSFORMER DEVELOPMENT!")
@@ -1032,29 +1225,44 @@ if __name__ == "__main__":
         print("=" * 50)
 
         # Best regression results
-        df_reg = analyzer.regression_results['results_df']
-        best_model = df_reg.loc[df_reg['Test_R2'].idxmax()]
+        if analyzer.regression_results and 'results_df' in analyzer.regression_results:
+            df_reg = analyzer.regression_results['results_df']
+            if not df_reg.empty:
+                best_model = df_reg.loc[df_reg['Test_R2'].idxmax()]
 
-        print(f"🏆 Best Regression Model: {best_model['Model']}")
-        print(f"   Test R²: {best_model['Test_R2']:.3f}")
-        print(f"   Test MAE: {best_model['Test_MAE']:.3f} mmol/L")
-        print(f"   Test RMSE: {best_model['Test_RMSE']:.3f} mmol/L")
+                print(f"🏆 Best Regression Model: {best_model['Model']}")
+                print(f"   Test R²: {best_model['Test_R2']:.3f}")
+                print(f"   Test MAE: {best_model['Test_MAE']:.3f} mmol/L")
+                print(f"   Test RMSE: {best_model['Test_RMSE']:.3f} mmol/L")
 
         # Best classification results
         for target_name, results in analyzer.classification_results.items():
+            if 'results_df' not in results or results['results_df'].empty:
+                continue
+
             df_clf = results['results_df']
-            best_clf = df_clf.loc[df_clf['Test_AUC'].idxmax()]
 
-            print(f"\n🏆 Best {target_name.replace('_', ' ').title()} Model: {best_clf['Model']}")
-            print(f"   Test AUC: {best_clf['Test_AUC']:.3f}")
-            print(f"   Test Accuracy: {best_clf['Test_Acc']:.3f}")
-            print(f"   Test F1: {best_clf['Test_F1']:.3f}")
+            if not df_clf['Test_AUC'].isna().all():
+                best_clf = df_clf.loc[df_clf['Test_AUC'].idxmax()]
+                print(f"\n🏆 Best {target_name.replace('_', ' ').title()} Model: {best_clf['Model']}")
+                print(f"   Test AUC: {best_clf['Test_AUC']:.3f}")
+                print(f"   Test Accuracy: {best_clf['Test_Acc']:.3f}")
+                print(f"   Test F1: {best_clf['Test_F1']:.3f}")
+            else:
+                best_clf = df_clf.loc[df_clf['Test_Acc'].idxmax()]
+                print(f"\n🏆 Best {target_name.replace('_', ' ').title()} Model: {best_clf['Model']}")
+                print(f"   Test Accuracy: {best_clf['Test_Acc']:.3f}")
+                print(f"   Test F1: {best_clf['Test_F1']:.3f}")
 
-        print(f"\n🎯 TARGETS FOR SLEEP-AWARE TRANSFORMER:")
-        print(f"   Beat Regression R²: > {best_model['Test_R2']:.3f}")
-        print(f"   Beat Regression MAE: < {best_model['Test_MAE']:.3f} mmol/L")
-        print(f"   Demonstrate superiority through statistical testing")
-        print(f"   Provide clinical interpretability through attention mechanisms")
+        if analyzer.regression_results and 'results_df' in analyzer.regression_results:
+            df_reg = analyzer.regression_results['results_df']
+            if not df_reg.empty:
+                best_model = df_reg.loc[df_reg['Test_R2'].idxmax()]
+                print(f"\n🎯 TARGETS FOR SLEEP-AWARE TRANSFORMER:")
+                print(f"   Beat Regression R²: > {best_model['Test_R2']:.3f}")
+                print(f"   Beat Regression MAE: < {best_model['Test_MAE']:.3f} mmol/L")
+                print(f"   Demonstrate superiority through statistical testing")
+                print(f"   Provide clinical interpretability through attention mechanisms")
 
     else:
         print("❌ Baseline analysis failed. Please check error messages above.")
