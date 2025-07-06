@@ -2,7 +2,7 @@
 import pandas as pd
 
 # Clinical indicators
-clinical = pd.read_excel('Clinical indicators.xlsx')
+clinical = pd.read_excel('Dataset_on_electrocardiograph/Dataset on electrocardiograph, sleep and metabolic function of male type 2 diabetes mellitus/Clinical indicators.xlsx')
 print('Clinical Indicators:')
 print(f'Shape: {clinical.shape}')
 print(f'Columns: {list(clinical.columns)}')
