@@ -1,639 +1,821 @@
 #!/usr/bin/env python3
 """
-Advanced Baseline Improvement Strategy for ECG-Glucose Prediction
-Target: Achieve R² > 0.6 for Q1 Publication
+COMPLETE FIXED Preprocessing Pipeline for Diabetes ECG Research
+Addresses all issues: ECG scaling, sample size, missing data, stratification
 """
 
+import os
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.linear_model import ElasticNet, BayesianRidge
-from sklearn.feature_selection import SelectKBest, f_regression, RFE
-from sklearn.preprocessing import StandardScaler, PolynomialFeatures
-from sklearn.model_selection import LeaveOneOut, cross_val_score
-from sklearn.metrics import mean_absolute_error, r2_score
-import xgboost as xgb
-from scipy.stats import pearsonr, spearmanr
-import matplotlib.pyplot as plt
-import seaborn as sns
+import scipy.io
 from pathlib import Path
+import json
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split, StratifiedKFold
+import warnings
+
+warnings.filterwarnings('ignore')
 
 
-class AdvancedBaselineImprovement:
-    def __init__(self, data_dir="processed_data"):
-        self.data_dir = Path(data_dir)
-        self.features = None
-        self.targets = None
-        self.X_processed = None
-        self.y = None
+class CompleteDiabetesECGPreprocessor:
+    def __init__(self, dataset_path="."):
+        self.dataset_path = Path(dataset_path)
+        self.clinical_data = None
+        self.objective_sleep = None
+        self.subjective_sleep = None
+        self.subjects_mapping = {}
+        self.complete_subjects = []
+        self.processed_data = {}
 
-        print("🚀 ADVANCED BASELINE IMPROVEMENT")
-        print("=" * 50)
-        print("🎯 Target: R² > 0.6 for Q1 Publication")
-        print("=" * 50)
+        print(f"🏁 Initialized preprocessor for: {self.dataset_path.absolute()}")
 
-    def load_and_analyze_data(self):
-        """Load data and perform detailed analysis"""
-        print("📊 Loading and analyzing data...")
+    def validate_ecg_scaling(self, ecg_signal):
+        """CRITICAL FIX: Validate and correct ECG scaling to physiological range"""
+        original_signal = ecg_signal.copy()
+        signal_range = np.max(np.abs(ecg_signal))
 
-        # Load features and targets
-        self.features = pd.read_csv(self.data_dir / "FINAL_features.csv")
+        print(f"   Original ECG range: ±{signal_range:.0f}")
 
-        with open(self.data_dir / "FINAL_targets.json", 'r') as f:
-            import json
-            targets_dict = json.load(f)
+        # Fix scaling based on detected issues
+        if signal_range > 50000:  # Likely raw ADC values
+            # Common 16-bit ADC with 5V range
+            ecg_signal = (ecg_signal / 32768) * 5  # Convert to mV
+            print(f"   Applied ADC conversion: ±{np.max(np.abs(ecg_signal)):.1f} mV")
 
-        self.targets = {k: np.array(v) for k, v in targets_dict.items()
-                        if isinstance(v, list)}
+        elif signal_range > 50:  # Likely in µV, convert to mV
+            ecg_signal = ecg_signal / 1000
+            print(f"   Applied µV to mV conversion: ±{np.max(np.abs(ecg_signal)):.1f} mV")
 
-        # Focus on primary glucose prediction
-        self.y = self.targets['primary_glucose']
+        # Final validation - ECG should be ±5mV typically
+        final_range = np.max(np.abs(ecg_signal))
+        if final_range > 20:  # Still too large
+            ecg_signal = ecg_signal / (final_range / 5)  # Normalize to ±5mV
+            print(f"   Applied final normalization: ±{np.max(np.abs(ecg_signal)):.1f} mV")
 
-        print(f"✅ Loaded {len(self.features)} subjects")
-        print(f"✅ Target range: {self.y.min():.1f} - {self.y.max():.1f} mmol/L")
-        print(f"✅ Target mean: {self.y.mean():.1f} ± {self.y.std():.1f} mmol/L")
+        return ecg_signal
 
-        return True
+    def load_clinical_data(self):
+        """Load clinical data with enhanced missing data handling"""
+        print("📋 Loading clinical data...")
 
-    def advanced_feature_engineering(self):
-        """Create high-impact composite features"""
-        print("🔧 Advanced feature engineering...")
+        # Try multiple possible file paths
+        possible_paths = [
+            self.dataset_path / "Dataset_on_electrocardiograph/dataset_ecg/clinical_indicators.xlsx"
+        ]
 
-        # Start with cleaned feature set
-        exclude_cols = ['subject_id', 'gender', 'Unnamed: 0'] + \
-                       [col for col in self.features.columns if any(term in col for term in
-                                                                    ['FBG', 'HbA1c', 'Diabetic', 'Coronary', 'Carotid',
-                                                                     'glucose'])]
+        clinical_file = None
+        for path in possible_paths:
+            if path.exists():
+                clinical_file = path
+                break
 
-        feature_cols = [col for col in self.features.columns if col not in exclude_cols]
-        X_base = self.features[feature_cols].fillna(0)
+        if clinical_file is None:
+            raise FileNotFoundError(
+                f"Could not find Clinical indicators.xlsx in any of: {[str(p) for p in possible_paths]}")
 
-        # Convert to numeric and handle any remaining issues
-        for col in X_base.columns:
-            X_base[col] = pd.to_numeric(X_base[col], errors='coerce').fillna(0)
+        self.clinical_data = pd.read_excel(clinical_file)
 
-        print(f"   Base features: {len(feature_cols)}")
+        # Fix column name
+        self.clinical_data = self.clinical_data.rename(columns={'Unnamed: 0': 'subject_id'})
+        self.clinical_data['subject_id'] = self.clinical_data['subject_id'].astype(str)
 
-        # 1. Sleep-Metabolic Interaction Features
-        print("   Creating sleep-metabolic interactions...")
-        sleep_features = {}
+        print(f"✅ Loaded clinical data: {self.clinical_data.shape}")
 
-        # HRV sleep stage ratios
-        if 'hrv_ds_mean_rr' in X_base.columns and 'hrv_rem_mean_rr' in X_base.columns:
-            sleep_features['hrv_deep_rem_ratio'] = (X_base['hrv_ds_mean_rr'] /
-                                                    (X_base['hrv_rem_mean_rr'] + 1e-6))
+        # Analyze missing data patterns
+        key_columns = ['admission FBG (mmol/L)', 'Discharge FBG (mmol/L)', 'HbA1c (%)']
+        for col in key_columns:
+            if col in self.clinical_data.columns:
+                missing_count = self.clinical_data[col].isna().sum()
+                print(
+                    f"   {col}: {missing_count}/{len(self.clinical_data)} missing ({missing_count / len(self.clinical_data) * 100:.1f}%)")
 
-        # Sleep efficiency indicators
-        if 'cpc_SSP (%)' in X_base.columns and 'cpc_USP (%)' in X_base.columns:
-            sleep_features['sleep_quality_index'] = (X_base['cpc_SSP (%)'] + X_base['cpc_RSP (%)']) / \
-                                                    (X_base['cpc_USP (%)'] + 1e-6)
+        return self.clinical_data
 
-        # 2. Circadian-Metabolic Features
-        print("   Creating circadian-metabolic features...")
+    def load_objective_sleep_data(self):
+        """Load objective sleep data with proper header handling"""
+        print("😴 Loading objective sleep data...")
 
-        # ECG circadian variation
-        if 'ecg_sleep_mean' in X_base.columns and 'ecg_day_mean' in X_base.columns:
-            sleep_features['ecg_circadian_ratio'] = X_base['ecg_sleep_mean'] / \
-                                                    (X_base['ecg_day_mean'] + 1e-6)
+        # Try multiple possible file paths
+        possible_paths = [
+            self.dataset_path / "Dataset_on_electrocardiograph/dataset_ecg/objective_sleep_quality.xlsx"
+        ]
 
-        # HRV circadian patterns
-        if 'hrv_ds_std_rr' in X_base.columns and 'hrv_rem_std_rr' in X_base.columns:
-            sleep_features['hrv_variability_index'] = (X_base['hrv_ds_std_rr'] +
-                                                       X_base['hrv_rem_std_rr']) / 2
+        obj_file = None
+        for path in possible_paths:
+            if path.exists():
+                obj_file = path
+                break
 
-        # 3. Autonomic Balance Features
-        print("   Creating autonomic balance features...")
+        if obj_file is None:
+            print("⚠️  Objective sleep quality file not found. Continuing without it.")
+            return None
 
-        # Sympathetic/Parasympathetic balance indicators
-        if 'hrv_ds_mean_hr' in X_base.columns and 'hrv_rem_mean_hr' in X_base.columns:
-            sleep_features['autonomic_balance'] = (X_base['hrv_ds_mean_hr'] -
-                                                   X_base['hrv_rem_mean_hr']) / \
-                                                  (X_base['hrv_ds_mean_hr'] +
-                                                   X_base['hrv_rem_mean_hr'] + 1e-6)
+        raw_obj_sleep = pd.read_excel(obj_file)
 
-        # 4. Clinical-Physiological Interactions
-        print("   Creating clinical-physiological interactions...")
+        # Extract real column names from row 0
+        real_columns = ['number', 'gender', 'age', 'height', 'weight']
+        psqi_columns = []
 
-        # Age-adjusted features
-        if 'age' in X_base.columns:
-            for hrv_col in [col for col in X_base.columns if 'hrv_' in col]:
-                if X_base[hrv_col].std() > 0:
-                    sleep_features[f'{hrv_col}_age_adjusted'] = X_base[hrv_col] / \
-                                                                (X_base['age'] / 50 + 0.1)
+        for i in range(5, len(raw_obj_sleep.columns)):
+            col_value = raw_obj_sleep.iloc[0, i]
+            if pd.notna(col_value):
+                psqi_columns.append(str(col_value).strip())
+            else:
+                psqi_columns.append(f'psqi_component_{i - 4}')
 
-        # BMI-adjusted features (if height/weight available)
-        if 'height' in X_base.columns and 'weight' in X_base.columns:
-            bmi = X_base['weight'] / ((X_base['height'] / 100) ** 2)
-            sleep_features['bmi'] = bmi
+        real_columns.extend(psqi_columns)
 
-            # BMI-adjusted HRV
-            for hrv_col in [col for col in X_base.columns if 'hrv_' in col]:
-                if X_base[hrv_col].std() > 0:
-                    sleep_features[f'{hrv_col}_bmi_adjusted'] = X_base[hrv_col] / \
-                                                                (bmi / 25 + 0.1)
+        # Create clean dataframe
+        self.objective_sleep = raw_obj_sleep.iloc[1:].copy()
+        self.objective_sleep.columns = real_columns[:len(self.objective_sleep.columns)]
+        self.objective_sleep['number'] = self.objective_sleep['number'].astype(str)
 
-        # 5. Signal Quality Features
-        print("   Creating signal quality features...")
+        # Convert numeric columns safely
+        numeric_cols = self.objective_sleep.columns[2:]
+        for col in numeric_cols:
+            self.objective_sleep[col] = pd.to_numeric(self.objective_sleep[col], errors='coerce')
 
-        # ECG quality indicators
-        snr_cols = [col for col in X_base.columns if 'snr' in col]
-        if snr_cols:
-            sleep_features['avg_signal_quality'] = X_base[snr_cols].mean(axis=1)
-            sleep_features['min_signal_quality'] = X_base[snr_cols].min(axis=1)
+        print(f"✅ Fixed objective sleep data: {self.objective_sleep.shape}")
+        return self.objective_sleep
 
-        # Combine all features
-        engineered_df = pd.DataFrame(sleep_features, index=X_base.index)
-        X_enhanced = pd.concat([X_base, engineered_df], axis=1)
+    def load_subjective_sleep_data(self):
+        """Load subjective sleep data"""
+        print("🧠 Loading subjective sleep data...")
 
-        print(f"   ✅ Added {len(sleep_features)} engineered features")
-        print(f"   ✅ Total features: {len(X_enhanced.columns)}")
+        # Try multiple possible file paths
+        possible_paths = [
+            self.dataset_path / "Dataset_on_electrocardiograph/dataset_ecg/subjective_sleep_quality.xlsx"
+        ]
 
-        self.X_enhanced = X_enhanced
-        return X_enhanced
+        subj_file = None
+        for path in possible_paths:
+            if path.exists():
+                subj_file = path
+                break
 
-    def intelligent_feature_selection(self):
-        """Apply multiple feature selection strategies"""
-        print("🎯 Intelligent feature selection...")
+        if subj_file is None:
+            print("⚠️  Subjective sleep quality file not found. Continuing without it.")
+            return None
 
-        X = self.X_enhanced.values
-        y = self.y
+        self.subjective_sleep = pd.read_excel(subj_file)
+        self.subjective_sleep['number'] = self.subjective_sleep['number'].astype(str)
 
-        # 1. Remove low-variance features
-        from sklearn.feature_selection import VarianceThreshold
-        var_selector = VarianceThreshold(threshold=0.01)
-        X_var = var_selector.fit_transform(X)
-        selected_features = self.X_enhanced.columns[var_selector.get_support()]
+        print(f"✅ Loaded subjective sleep data: {self.subjective_sleep.shape}")
+        return self.subjective_sleep
 
-        print(f"   After variance filter: {len(selected_features)} features")
+    def create_subject_mapping(self):
+        """Create comprehensive subject mapping"""
+        print("🗺️ Creating subject mapping...")
 
-        # 2. Statistical significance filter
-        selector = SelectKBest(score_func=f_regression, k=min(50, len(selected_features)))
-        X_stat = selector.fit_transform(X_var, y)
-        stat_features = selected_features[selector.get_support()]
+        # Get subjects from each source
+        clinical_subjects = set(self.clinical_data['subject_id'])
 
-        print(f"   After statistical filter: {len(stat_features)} features")
+        # Try multiple possible ECG directory paths
+        possible_ecg_paths = [
+            self.dataset_path / "Dataset_on_electrocardiograph/dataset_ecg/ECG"
+        ]
 
-        # 3. Correlation analysis
-        selected_df = self.X_enhanced[stat_features]
+        ecg_dir = None
+        for path in possible_ecg_paths:
+            if path.exists():
+                ecg_dir = path
+                break
 
-        # Remove highly correlated features
-        corr_matrix = selected_df.corr().abs()
-        upper_triangle = corr_matrix.where(
-            np.triu(np.ones(corr_matrix.shape), k=1).astype(bool)
-        )
+        ecg_subjects = set([f.stem for f in ecg_dir.glob("*.mat")]) if ecg_dir is not None else set()
 
-        # Find features with correlation > 0.95
-        high_corr_features = [column for column in upper_triangle.columns
-                              if any(upper_triangle[column] > 0.95)]
+        # Try multiple possible RR-interval directory paths
+        possible_rr_paths = [
+            self.dataset_path / "Dataset_on_electrocardiograph/dataset_ecg/RR_interval"
+        ]
 
-        final_features = [f for f in stat_features if f not in high_corr_features]
+        rr_dir = None
+        for path in possible_rr_paths:
+            if path.exists():
+                rr_dir = path
+                break
 
-        print(f"   After correlation filter: {len(final_features)} features")
+        rr_subjects = set([f.stem for f in rr_dir.glob("*.mat")]) if rr_dir is not None else set()
 
-        # 4. Recursive Feature Elimination with Cross-Validation
-        if len(final_features) > 30:
-            rf_selector = RFE(RandomForestRegressor(n_estimators=50, random_state=42),
-                              n_features_to_select=25)
-            X_final = rf_selector.fit_transform(selected_df[final_features], y)
-            final_features = np.array(final_features)[rf_selector.get_support()]
+        obj_sleep_subjects = set(self.objective_sleep['number']) if self.objective_sleep is not None else set()
+        subj_sleep_subjects = set(self.subjective_sleep['number']) if self.subjective_sleep is not None else set()
 
-            print(f"   After RFE: {len(final_features)} features")
+        print(f"📁 Found data directories:")
+        print(f"   ECG: {ecg_dir}")
+        print(f"   RR-interval: {rr_dir}")
 
-        self.selected_features = final_features
-        self.X_selected = selected_df[final_features]
+        # Create mapping
+        all_subjects = clinical_subjects | ecg_subjects | rr_subjects | obj_sleep_subjects | subj_sleep_subjects
 
-        return self.X_selected
-
-    def advanced_modeling_ensemble(self):
-        """Implement sophisticated ensemble approach"""
-        print("🤖 Advanced ensemble modeling...")
-
-        X = self.X_selected.values
-        y = self.y
-
-        # Standardize features
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-
-        # 1. Base Models with Optimized Parameters
-        base_models = {
-            'ElasticNet': ElasticNet(alpha=0.1, l1_ratio=0.5, random_state=42),
-            'BayesianRidge': BayesianRidge(alpha_1=1e-6, alpha_2=1e-6,
-                                           lambda_1=1e-6, lambda_2=1e-6),
-            'RandomForest': RandomForestRegressor(n_estimators=200, max_depth=5,
-                                                  min_samples_split=3, random_state=42),
-            'GradientBoosting': GradientBoostingRegressor(n_estimators=200, max_depth=4,
-                                                          learning_rate=0.05, random_state=42),
-            'XGBoost': xgb.XGBRegressor(n_estimators=200, max_depth=4,
-                                        learning_rate=0.05, random_state=42, verbosity=0)
-        }
-
-        # 2. Cross-validation with Leave-One-Out
-        loo = LeaveOneOut()
-        cv_predictions = np.zeros((len(y), len(base_models)))
-        cv_scores = {}
-
-        print("   Performing Leave-One-Out cross-validation...")
-
-        for i, (model_name, model) in enumerate(base_models.items()):
-            print(f"     {model_name}...")
-
-            fold_predictions = []
-            fold_scores = []
-
-            for train_idx, test_idx in loo.split(X_scaled):
-                X_train, X_test = X_scaled[train_idx], X_scaled[test_idx]
-                y_train, y_test = y[train_idx], y[test_idx]
-
-                # Train model
-                model.fit(X_train, y_train)
-
-                # Predict
-                y_pred = model.predict(X_test)
-                fold_predictions.append(y_pred[0])
-
-                # Calculate score for this fold
-                fold_scores.append(r2_score([y_test[0]], [y_pred[0]]))
-
-            cv_predictions[:, i] = fold_predictions
-            cv_scores[model_name] = {
-                'CV_R2': np.mean(fold_scores),
-                'CV_MAE': mean_absolute_error(y, fold_predictions),
-                'CV_R2_full': r2_score(y, fold_predictions)
+        for subject_id in all_subjects:
+            self.subjects_mapping[subject_id] = {
+                'has_clinical': subject_id in clinical_subjects,
+                'has_ecg': subject_id in ecg_subjects,
+                'has_rr': subject_id in rr_subjects,
+                'has_obj_sleep': subject_id in obj_sleep_subjects,
+                'has_subj_sleep': subject_id in subj_sleep_subjects,
+                'ecg_file': ecg_dir / f"{subject_id}.mat" if ecg_dir and subject_id in ecg_subjects else None,
+                'rr_file': rr_dir / f"{subject_id}.mat" if rr_dir and subject_id in rr_subjects else None
             }
 
-            print(f"       R²: {cv_scores[model_name]['CV_R2_full']:.3f}, "
-                  f"MAE: {cv_scores[model_name]['CV_MAE']:.3f}")
+        # RELAXED inclusion criteria to increase sample size
+        self.complete_subjects = [
+            subject_id for subject_id, info in self.subjects_mapping.items()
+            if info['has_clinical'] and info['has_ecg']  # Don't require RR-interval
+        ]
 
-        # 3. Meta-Learning Ensemble
-        print("   Training meta-learner...")
+        print(f"📊 Subject mapping summary:")
+        print(f"   Clinical subjects: {len(clinical_subjects)}")
+        print(f"   ECG subjects: {len(ecg_subjects)}")
+        print(f"   RR-interval subjects: {len(rr_subjects)}")
+        print(f"   COMPLETE subjects (Clinical+ECG): {len(self.complete_subjects)}")
+        print(
+            f"   With RR-interval data: {sum(1 for s in self.complete_subjects if self.subjects_mapping[s]['has_rr'])}")
 
-        # Use cross-validated predictions as features for meta-learner
-        meta_model = ElasticNet(alpha=0.01, random_state=42)
+        return self.subjects_mapping
 
-        # Train meta-model using LOO on the base predictions
-        meta_predictions = []
+    def create_enhanced_targets(self):
+        """Create multiple target formulations to handle missing data"""
+        print("🎯 Creating enhanced target variables...")
 
-        for train_idx, test_idx in loo.split(cv_predictions):
-            X_meta_train = cv_predictions[train_idx]
-            y_meta_train = y[train_idx]
-            X_meta_test = cv_predictions[test_idx]
+        df = self.clinical_data
+        targets = {}
+        usable_subjects = []
 
-            meta_model.fit(X_meta_train, y_meta_train)
-            meta_pred = meta_model.predict(X_meta_test)
-            meta_predictions.append(meta_pred[0])
+        for _, row in df.iterrows():
+            subject_id = row['subject_id']
+            if subject_id not in self.complete_subjects:
+                continue
 
-        meta_predictions = np.array(meta_predictions)
+            admission_fbg = row.get('admission FBG (mmol/L)', np.nan)
+            discharge_fbg = row.get('Discharge FBG (mmol/L)', np.nan)
+            hba1c = row.get('HbA1c (%)', np.nan)
 
-        # Calculate ensemble performance
-        ensemble_r2 = r2_score(y, meta_predictions)
-        ensemble_mae = mean_absolute_error(y, meta_predictions)
+            # Strategy 1: Use ANY available glucose measurement
+            primary_glucose = None
+            glucose_type = None
 
-        print(f"   🎯 Ensemble Performance:")
-        print(f"     R²: {ensemble_r2:.3f}")
-        print(f"     MAE: {ensemble_mae:.3f} mmol/L")
+            if pd.notna(hba1c):
+                primary_glucose = hba1c
+                glucose_type = 'hba1c'
+            elif pd.notna(admission_fbg):
+                primary_glucose = admission_fbg
+                glucose_type = 'admission_fbg'
+            elif pd.notna(discharge_fbg):
+                primary_glucose = discharge_fbg
+                glucose_type = 'discharge_fbg'
 
-        # Store results
-        self.base_models = base_models
-        self.cv_scores = cv_scores
-        self.meta_model = meta_model
-        self.ensemble_predictions = meta_predictions
-        self.ensemble_performance = {
-            'R2': ensemble_r2,
-            'MAE': ensemble_mae
-        }
+            if primary_glucose is not None:
+                usable_subjects.append({
+                    'subject_id': subject_id,
+                    'primary_glucose': primary_glucose,
+                    'glucose_type': glucose_type,
+                    'admission_fbg': admission_fbg,
+                    'discharge_fbg': discharge_fbg,
+                    'hba1c': hba1c,
+                    'has_glucose_change': pd.notna(admission_fbg) and pd.notna(discharge_fbg)
+                })
 
-        return ensemble_r2, ensemble_mae
+        # Convert to arrays
+        subjects_df = pd.DataFrame(usable_subjects)
 
-    def advanced_validation_analysis(self):
-        """Perform comprehensive validation analysis"""
-        print("📊 Advanced validation analysis...")
+        if len(subjects_df) == 0:
+            raise ValueError("No subjects with valid glucose data found!")
 
-        y_true = self.y
-        y_pred = self.ensemble_predictions
+        # Target 1: Primary glucose (continuous)
+        targets['primary_glucose'] = subjects_df['primary_glucose'].values
 
-        # 1. Statistical Significance Tests
-        from scipy.stats import pearsonr, spearmanr, ttest_1samp
+        # Target 2: Glucose control categories (ADA guidelines)
+        glucose_control = []
+        for _, row in subjects_df.iterrows():
+            if row['glucose_type'] == 'hba1c':
+                if row['primary_glucose'] < 7.0:
+                    glucose_control.append(0)  # Good control
+                elif row['primary_glucose'] < 8.5:
+                    glucose_control.append(1)  # Fair control
+                else:
+                    glucose_control.append(2)  # Poor control
+            else:  # FBG
+                if row['primary_glucose'] < 7.0:
+                    glucose_control.append(0)  # Normal/good
+                elif row['primary_glucose'] < 10.0:
+                    glucose_control.append(1)  # Elevated
+                else:
+                    glucose_control.append(2)  # High
 
-        # Correlation analysis
-        pearson_r, pearson_p = pearsonr(y_true, y_pred)
-        spearman_r, spearman_p = spearmanr(y_true, y_pred)
+        targets['glucose_control'] = np.array(glucose_control)
 
-        # Error analysis
-        errors = y_pred - y_true
-        _, normality_p = ttest_1samp(errors, 0)
+        # Target 3: Binary elevated glucose
+        targets['glucose_elevated'] = (subjects_df['primary_glucose'] > 7.0).astype(int).values
 
-        print(f"   Statistical Analysis:")
-        print(f"     Pearson correlation: r={pearson_r:.3f}, p={pearson_p:.3f}")
-        print(f"     Spearman correlation: r={spearman_r:.3f}, p={spearman_p:.3f}")
-        print(f"     Error bias test: p={normality_p:.3f}")
+        # Target 4: Glucose improvement (when available)
+        improvement_subjects = subjects_df[subjects_df['has_glucose_change']].copy()
+        if len(improvement_subjects) > 0:
+            glucose_change = improvement_subjects['discharge_fbg'] - improvement_subjects['admission_fbg']
+            targets['glucose_change'] = glucose_change.values
+            targets['glucose_improved'] = (glucose_change < 0).astype(int).values
+            targets['glucose_change_indices'] = improvement_subjects.index.values
 
-        # 2. Clinical Significance Analysis
-        clinical_thresholds = [0.5, 1.0, 1.5, 2.0]
-        abs_errors = np.abs(errors)
+        # Store subject mapping for targets
+        targets['subject_ids'] = subjects_df['subject_id'].values
+        targets['glucose_types'] = subjects_df['glucose_type'].values
 
-        print(f"   Clinical Acceptance Rates:")
-        for threshold in clinical_thresholds:
-            rate = np.mean(abs_errors <= threshold) * 100
-            print(f"     Within ±{threshold} mmol/L: {rate:.1f}%")
+        print(f"✅ Enhanced targets created:")
+        print(f"   Total usable subjects: {len(subjects_df)}")
+        print(f"   With glucose change data: {len(improvement_subjects) if len(improvement_subjects) > 0 else 0}")
+        print(
+            f"   Target variables: {[k for k in targets.keys() if not k.endswith('_indices') and not k.endswith('_ids') and not k.endswith('_types')]}")
 
-        # 3. Residual Analysis
-        plt.figure(figsize=(15, 10))
+        # Update complete subjects list
+        self.complete_subjects = subjects_df['subject_id'].tolist()
 
-        # Prediction vs Actual
-        plt.subplot(2, 3, 1)
-        plt.scatter(y_true, y_pred, alpha=0.7)
-        plt.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], 'r--')
-        plt.xlabel('Actual Glucose (mmol/L)')
-        plt.ylabel('Predicted Glucose (mmol/L)')
-        plt.title(f'Prediction vs Actual\nR² = {self.ensemble_performance["R2"]:.3f}')
+        return targets
 
-        # Residuals
-        plt.subplot(2, 3, 2)
-        plt.scatter(y_pred, errors, alpha=0.7)
-        plt.axhline(0, color='red', linestyle='--')
-        plt.xlabel('Predicted Glucose (mmol/L)')
-        plt.ylabel('Residuals (mmol/L)')
-        plt.title('Residuals vs Predicted')
+    def extract_ecg_features(self, subject_id):
+        """Extract ECG features with proper scaling"""
+        subject_info = self.subjects_mapping.get(subject_id, {})
+        ecg_file = subject_info.get('ecg_file')
 
-        # Error distribution
-        plt.subplot(2, 3, 3)
-        plt.hist(errors, bins=10, alpha=0.7, edgecolor='black')
-        plt.axvline(0, color='red', linestyle='--')
-        plt.xlabel('Prediction Error (mmol/L)')
-        plt.ylabel('Frequency')
-        plt.title('Error Distribution')
+        if ecg_file is None or not ecg_file.exists():
+            return None
 
-        # Model comparison
-        plt.subplot(2, 3, 4)
-        model_names = list(self.cv_scores.keys()) + ['Ensemble']
-        r2_scores = [self.cv_scores[name]['CV_R2_full'] for name in self.cv_scores.keys()] + \
-                    [self.ensemble_performance['R2']]
+        try:
+            ecg_data = scipy.io.loadmat(str(ecg_file))
+            features = {}
 
-        bars = plt.bar(range(len(model_names)), r2_scores)
-        bars[-1].set_color('red')  # Highlight ensemble
-        plt.xticks(range(len(model_names)), model_names, rotation=45)
-        plt.ylabel('R² Score')
-        plt.title('Model Comparison')
+            print(f"   Processing ECG for {subject_id}...")
 
-        # Clinical zones
-        plt.subplot(2, 3, 5)
-        clinical_zones = ['<7.0', '7.0-8.5', '>8.5']
-        actual_counts = [np.sum(y_true < 7.0),
-                         np.sum((y_true >= 7.0) & (y_true < 8.5)),
-                         np.sum(y_true >= 8.5)]
-        predicted_counts = [np.sum(y_pred < 7.0),
-                            np.sum((y_pred >= 7.0) & (y_pred < 8.5)),
-                            np.sum(y_pred >= 8.5)]
+            for var_name in ['all', 'sleep', 'day']:
+                if var_name in ecg_data:
+                    signal = ecg_data[var_name].flatten()
 
-        x = np.arange(len(clinical_zones))
-        width = 0.35
-        plt.bar(x - width / 2, actual_counts, width, label='Actual', alpha=0.7)
-        plt.bar(x + width / 2, predicted_counts, width, label='Predicted', alpha=0.7)
-        plt.xlabel('Glucose Control Zones (mmol/L)')
-        plt.ylabel('Number of Subjects')
-        plt.title('Clinical Zone Distribution')
-        plt.xticks(x, clinical_zones)
-        plt.legend()
+                    # CRITICAL: Fix ECG scaling
+                    signal = self.validate_ecg_scaling(signal)
 
-        # Feature importance (if available)
-        plt.subplot(2, 3, 6)
-        if hasattr(self.base_models['RandomForest'], 'feature_importances_'):
-            importance = self.base_models['RandomForest'].feature_importances_
-            top_indices = np.argsort(importance)[-10:]
-            top_features = [self.selected_features[i] for i in top_indices]
-            top_importance = importance[top_indices]
+                    # Basic signal statistics
+                    features[f'ecg_{var_name}_length'] = len(signal)
+                    features[f'ecg_{var_name}_duration_hours'] = len(signal) / 250 / 3600
+                    features[f'ecg_{var_name}_mean'] = np.mean(signal)
+                    features[f'ecg_{var_name}_std'] = np.std(signal)
+                    features[f'ecg_{var_name}_min'] = np.min(signal)
+                    features[f'ecg_{var_name}_max'] = np.max(signal)
+                    features[f'ecg_{var_name}_range'] = np.max(signal) - np.min(signal)
 
-            plt.barh(range(len(top_features)), top_importance)
-            plt.yticks(range(len(top_features)),
-                       [f.replace('_', ' ')[:20] + '...' if len(f) > 20 else f.replace('_', ' ')
-                        for f in top_features])
-            plt.xlabel('Importance')
-            plt.title('Top 10 Feature Importance')
+                    # Signal quality metrics
+                    if np.std(signal) > 0:
+                        features[f'ecg_{var_name}_snr_estimate'] = np.abs(np.mean(signal)) / np.std(signal)
+                    else:
+                        features[f'ecg_{var_name}_snr_estimate'] = 0
 
-        plt.tight_layout()
-        plt.savefig('advanced_baseline_analysis.png', dpi=300, bbox_inches='tight')
-        plt.close()
+            return features
 
-        # 4. Bootstrap Confidence Intervals
-        print("   Computing bootstrap confidence intervals...")
+        except Exception as e:
+            print(f"❌ Error processing ECG for {subject_id}: {e}")
+            return None
 
-        n_bootstrap = 1000
-        bootstrap_r2 = []
-        bootstrap_mae = []
+    def extract_hrv_features(self, subject_id):
+        """Extract HRV features from RR-interval data"""
+        subject_info = self.subjects_mapping.get(subject_id, {})
+        rr_file = subject_info.get('rr_file')
 
-        for _ in range(n_bootstrap):
-            # Bootstrap sample
-            indices = np.random.choice(len(y_true), size=len(y_true), replace=True)
-            y_boot_true = y_true[indices]
-            y_boot_pred = y_pred[indices]
+        if rr_file is None or not rr_file.exists():
+            # print(f"   No RR-interval data for {subject_id}")
+            return None
 
-            # Calculate metrics
-            bootstrap_r2.append(r2_score(y_boot_true, y_boot_pred))
-            bootstrap_mae.append(mean_absolute_error(y_boot_true, y_boot_pred))
+        try:
+            rr_data = scipy.io.loadmat(str(rr_file))
+            features = {}
 
-        r2_ci = np.percentile(bootstrap_r2, [2.5, 97.5])
-        mae_ci = np.percentile(bootstrap_mae, [2.5, 97.5])
+            for stage in ['DS', 'RS', 'REM']:
+                if stage in rr_data:
+                    intervals = rr_data[stage].flatten() / 1000.0  # Convert ms to seconds
 
-        print(f"   Bootstrap Confidence Intervals (95%):")
-        print(f"     R²: {r2_ci[0]:.3f} - {r2_ci[1]:.3f}")
-        print(f"     MAE: {mae_ci[0]:.3f} - {mae_ci[1]:.3f} mmol/L")
+                    if len(intervals) > 1:
+                        # Time domain HRV features
+                        features[f'hrv_{stage.lower()}_mean_rr'] = np.mean(intervals)
+                        features[f'hrv_{stage.lower()}_std_rr'] = np.std(intervals)
+                        features[f'hrv_{stage.lower()}_mean_hr'] = 60 / np.mean(intervals)
 
-        # Store validation results
-        self.validation_results = {
-            'pearson_correlation': (pearson_r, pearson_p),
-            'spearman_correlation': (spearman_r, spearman_p),
-            'clinical_acceptance': {f'within_{t}': np.mean(abs_errors <= t) * 100
-                                    for t in clinical_thresholds},
-            'bootstrap_ci': {'R2': r2_ci, 'MAE': mae_ci},
-            'error_bias_p': normality_p
-        }
+                        # RMSSD
+                        rr_diffs = np.diff(intervals)
+                        features[f'hrv_{stage.lower()}_rmssd'] = np.sqrt(np.mean(rr_diffs ** 2))
 
-        return self.validation_results
+                        # pNN50
+                        features[f'hrv_{stage.lower()}_pnn50'] = np.sum(np.abs(rr_diffs) > 0.05) / len(rr_diffs) * 100
 
-    def generate_improvement_report(self):
-        """Generate comprehensive improvement report"""
-        print("📝 Generating improvement report...")
+                        # Additional metrics
+                        features[f'hrv_{stage.lower()}_min_rr'] = np.min(intervals)
+                        features[f'hrv_{stage.lower()}_max_rr'] = np.max(intervals)
+                        features[f'hrv_{stage.lower()}_range_rr'] = np.max(intervals) - np.min(intervals)
+                        features[f'hrv_{stage.lower()}_duration_hours'] = len(intervals) * np.mean(intervals) / 3600
+                        features[f'hrv_{stage.lower()}_count'] = len(intervals)
 
-        report = []
-        report.append("# ADVANCED BASELINE IMPROVEMENT REPORT")
-        report.append("=" * 60)
-        report.append(f"Generated: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        report.append("")
+            return features
 
-        # Performance Summary
-        report.append("## PERFORMANCE SUMMARY")
-        report.append("-" * 30)
-        report.append(f"Final Ensemble Performance:")
-        report.append(f"  R² Score: {self.ensemble_performance['R2']:.3f}")
-        report.append(f"  MAE: {self.ensemble_performance['MAE']:.3f} mmol/L")
-        report.append("")
+        except Exception as e:
+            print(f"❌ Error processing RR-intervals for {subject_id}: {e}")
+            return None
 
-        # Q1 Publication Assessment
-        r2_score = self.ensemble_performance['R2']
-        mae_score = self.ensemble_performance['MAE']
+    def extract_clinical_features(self, subject_id):
+        """Extract clinical features"""
+        subject_data = self.clinical_data[self.clinical_data['subject_id'] == subject_id]
 
-        report.append("## Q1 PUBLICATION READINESS")
-        report.append("-" * 30)
+        if len(subject_data) == 0:
+            return None
 
-        if r2_score >= 0.6 and mae_score <= 0.8:
-            status = "✅ EXCELLENT - Q1 Ready"
-        elif r2_score >= 0.4 and mae_score <= 1.0:
-            status = "⚠️ GOOD - Conference Ready"
-        elif r2_score >= 0.2 and mae_score <= 1.5:
-            status = "🔧 FAIR - Needs Improvement"
+        features = subject_data.iloc[0].to_dict()
+        return features
+
+    def extract_sleep_features(self, subject_id):
+        """Extract sleep features"""
+        features = {}
+
+        # Objective sleep features
+        if self.objective_sleep is not None:
+            obj_data = self.objective_sleep[self.objective_sleep['number'] == subject_id]
+            if len(obj_data) > 0:
+                obj_features = obj_data.iloc[0].to_dict()
+                for key, value in obj_features.items():
+                    if key not in ['number', 'gender']:
+                        features[f'psqi_{key}'] = value
+
+        # Subjective sleep features
+        if self.subjective_sleep is not None:
+            subj_data = self.subjective_sleep[self.subjective_sleep['number'] == subject_id]
+            if len(subj_data) > 0:
+                subj_features = subj_data.iloc[0].to_dict()
+                for key, value in subj_features.items():
+                    if key != 'number':
+                        features[f'cpc_{key}'] = value
+
+        return features if features else None
+
+    def process_all_subjects(self):
+        """Process all subjects with enhanced target creation"""
+        print("🔬 Processing all subjects...")
+
+        # First create enhanced targets to get final subject list
+        targets = self.create_enhanced_targets()
+
+        all_features = []
+
+        for subject_id in self.complete_subjects:
+            print(f"Processing {subject_id}...")
+
+            subject_features = {'subject_id': subject_id}
+
+            # Clinical features
+            clinical_features = self.extract_clinical_features(subject_id)
+            if clinical_features:
+                subject_features.update(clinical_features)
+
+            # ECG features
+            ecg_features = self.extract_ecg_features(subject_id)
+            if ecg_features:
+                subject_features.update(ecg_features)
+
+            # HRV features (optional now)
+            hrv_features = self.extract_hrv_features(subject_id)
+            if hrv_features:
+                subject_features.update(hrv_features)
+
+            # Sleep features
+            sleep_features = self.extract_sleep_features(subject_id)
+            if sleep_features:
+                subject_features.update(sleep_features)
+
+            all_features.append(subject_features)
+
+        self.processed_data['features'] = pd.DataFrame(all_features)
+        self.processed_data['targets'] = targets
+
+        print(f"✅ Processed {len(all_features)} subjects")
+        print(f"   Total features: {len(self.processed_data['features'].columns)}")
+
+        return self.processed_data['features']
+
+    def create_train_test_splits(self, test_size=0.2, val_size=0.2, random_state=42):
+        """FIXED: Create train/test splits with robust stratification"""
+        if 'targets' not in self.processed_data:
+            raise ValueError("Must create targets first")
+
+        targets = self.processed_data['targets']
+
+        # Prepare feature matrix (exclude non-feature columns)
+        df = self.processed_data['features']
+        exclude_cols = ['subject_id', 'gender', 'Unnamed: 0'] + \
+                       [col for col in df.columns if any(term in col for term in
+                                                         ['FBG', 'HbA1c', 'Diabetic', 'Coronary', 'Carotid',
+                                                          'glucose'])]
+
+        feature_cols = [col for col in df.columns if col not in exclude_cols]
+        X = df[feature_cols].fillna(0).values
+
+        # ROBUST STRATIFICATION STRATEGY (THE FIX!)
+        y_stratify = targets['primary_glucose']
+        n_samples = len(X)
+
+        print(f"📊 Glucose distribution analysis:")
+        print(f"   Range: {np.min(y_stratify):.1f} - {np.max(y_stratify):.1f}")
+        print(f"   Mean: {np.mean(y_stratify):.1f} ± {np.std(y_stratify):.1f}")
+
+        # Strategy 1: Try binary stratification (most robust)
+        try:
+            # Use median split for balanced classes
+            median_glucose = np.median(y_stratify)
+            y_stratify_binary = (y_stratify > median_glucose).astype(int)
+
+            # Check class balance
+            class_counts = np.bincount(y_stratify_binary)
+            print(f"   Binary classes: {class_counts[0]} low, {class_counts[1]} high")
+
+            # Ensure both classes have at least 2 samples
+            if np.min(class_counts) >= 2:
+                stratify_var = y_stratify_binary
+                stratify_method = "binary_median"
+                print("   ✅ Using binary median stratification")
+            else:
+                raise ValueError("Insufficient samples for binary stratification")
+
+        except:
+            # Strategy 2: Try percentile-based stratification
+            try:
+                # Use 70th percentile as cutoff (ADA diabetes threshold ~7.0 mmol/L)
+                cutoff = 7.0 if np.max(y_stratify) > 10 else np.percentile(y_stratify, 70)
+                y_stratify_clinical = (y_stratify > cutoff).astype(int)
+
+                class_counts = np.bincount(y_stratify_clinical)
+                print(f"   Clinical classes: {class_counts[0]} normal, {class_counts[1]} elevated")
+
+                if np.min(class_counts) >= 2:
+                    stratify_var = y_stratify_clinical
+                    stratify_method = "clinical_threshold"
+                    print("   ✅ Using clinical threshold stratification")
+                else:
+                    raise ValueError("Insufficient samples for clinical stratification")
+
+            except:
+                # Strategy 3: Fallback to random splitting
+                stratify_var = None
+                stratify_method = "random"
+                print("   ⚠️  Using random splitting (no stratification)")
+
+        # Create splits based on sample size
+        if n_samples < 20:
+            print(f"   📝 Small sample ({n_samples}): Using cross-validation")
+            splits = {
+                'X_full': X,
+                'y_full': y_stratify,
+                'stratify_labels': stratify_var,
+                'use_cv': True,
+                'cv_folds': min(5, n_samples),
+                'stratify_method': stratify_method
+            }
         else:
-            status = "❌ POOR - Major Revision Needed"
+            print(f"   📝 Adequate sample ({n_samples}): Using train/val/test split")
 
-        report.append(f"Publication Readiness: {status}")
-        report.append("")
+            total_test_val_size = test_size + val_size
 
-        # Individual Model Performance
-        report.append("## INDIVIDUAL MODEL PERFORMANCE")
-        report.append("-" * 30)
-        for model_name, scores in self.cv_scores.items():
-            report.append(f"{model_name}:")
-            report.append(f"  R²: {scores['CV_R2_full']:.3f}")
-            report.append(f"  MAE: {scores['CV_MAE']:.3f} mmol/L")
-        report.append("")
+            # First split: train vs (val+test)
+            X_train, X_temp, y_train_strat, y_temp_strat = train_test_split(
+                X, stratify_var if stratify_var is not None else y_stratify,
+                test_size=total_test_val_size,
+                stratify=stratify_var,
+                random_state=random_state
+            )
 
-        # Statistical Analysis
-        if hasattr(self, 'validation_results'):
-            report.append("## STATISTICAL VALIDATION")
-            report.append("-" * 30)
+            # Second split: val vs test
+            if len(X_temp) >= 4:
+                try:
+                    X_val, X_test, _, _ = train_test_split(
+                        X_temp, y_temp_strat,
+                        test_size=(test_size / total_test_val_size),
+                        stratify=y_temp_strat if stratify_var is not None else None,
+                        random_state=random_state
+                    )
+                except ValueError:
+                    # If stratification fails on small temp set, use random
+                    X_val, X_test, _, _ = train_test_split(
+                        X_temp, y_temp_strat,
+                        test_size=(test_size / total_test_val_size),
+                        random_state=random_state
+                    )
+            else:
+                # Too few for proper split
+                mid_point = len(X_temp) // 2
+                X_val = X_temp[:mid_point] if mid_point > 0 else X_temp
+                X_test = X_temp[mid_point:] if mid_point > 0 else X_temp
 
-            pearson_r, pearson_p = self.validation_results['pearson_correlation']
-            report.append(f"Pearson Correlation: r={pearson_r:.3f}, p={pearson_p:.3f}")
+            splits = {
+                'X_train': X_train,
+                'X_val': X_val,
+                'X_test': X_test,
+                'use_cv': False,
+                'stratify_method': stratify_method
+            }
 
-            r2_ci = self.validation_results['bootstrap_ci']['R2']
-            mae_ci = self.validation_results['bootstrap_ci']['MAE']
-            report.append(f"Bootstrap 95% CI:")
-            report.append(f"  R²: {r2_ci[0]:.3f} - {r2_ci[1]:.3f}")
-            report.append(f"  MAE: {mae_ci[0]:.3f} - {mae_ci[1]:.3f} mmol/L")
-            report.append("")
+        # Add all targets to splits
+        for target_name, target_values in targets.items():
+            if isinstance(target_values, np.ndarray) and len(target_values) == n_samples:
+                if splits['use_cv']:
+                    splits[f'y_{target_name}'] = target_values
+                else:
+                    # Create target splits matching feature splits
+                    train_indices = np.arange(n_samples)[:len(splits['X_train'])]
+                    val_indices = np.arange(n_samples)[
+                                  len(splits['X_train']):len(splits['X_train']) + len(splits['X_val'])]
+                    test_indices = np.arange(n_samples)[len(splits['X_train']) + len(splits['X_val']):]
 
-            # Clinical acceptance
-            report.append("Clinical Acceptance Rates:")
-            for threshold, rate in self.validation_results['clinical_acceptance'].items():
-                threshold_val = threshold.split('_')[1]
-                report.append(f"  Within ±{threshold_val} mmol/L: {rate:.1f}%")
+                    splits[f'y_train_{target_name}'] = target_values[train_indices]
+                    splits[f'y_val_{target_name}'] = target_values[val_indices]
+                    splits[f'y_test_{target_name}'] = target_values[test_indices]
 
-        report.append("")
+        self.processed_data['splits'] = splits
+        self.processed_data['feature_names'] = feature_cols
 
-        # Feature Engineering Impact
-        report.append("## FEATURE ENGINEERING IMPACT")
-        report.append("-" * 30)
-        report.append(f"Selected Features: {len(self.selected_features)}")
-        report.append("Key Feature Categories:")
-
-        # Categorize selected features
-        categories = {
-            'Sleep-HRV': [f for f in self.selected_features if 'hrv_' in f],
-            'ECG': [f for f in self.selected_features if 'ecg_' in f],
-            'Clinical': [f for f in self.selected_features if any(term in f for term in
-                                                                  ['age', 'weight', 'height', 'SBP', 'DBP'])],
-            'Sleep Quality': [f for f in self.selected_features if any(term in f for term in
-                                                                       ['psqi_', 'cpc_'])],
-            'Engineered': [f for f in self.selected_features if any(term in f for term in
-                                                                    ['ratio', 'index', 'balance', 'adjusted'])]
-        }
-
-        for category, features in categories.items():
-            if features:
-                report.append(f"  {category}: {len(features)} features")
-
-        report.append("")
-
-        # Recommendations
-        report.append("## RECOMMENDATIONS")
-        report.append("-" * 30)
-
-        if r2_score >= 0.6:
-            report.append("🎯 Ready for Q1 Journal Submission:")
-            report.append("  - Target: Nature Machine Intelligence, Neural Networks")
-            report.append("  - Frame as methodology paper")
-            report.append("  - Emphasize sleep-aware architecture")
-        elif r2_score >= 0.4:
-            report.append("🎯 Ready for Conference Submission:")
-            report.append("  - Target: IEEE EMBC, Computing in Cardiology")
-            report.append("  - Focus on proof-of-concept")
-            report.append("  - Continue improving for journal")
+        print(f"✅ FIXED splits created using {stratify_method} method:")
+        if splits['use_cv']:
+            print(f"   Cross-validation: {splits['cv_folds']} folds")
         else:
-            report.append("🔧 Further Improvements Needed:")
-            report.append("  - Consider additional feature engineering")
-            report.append("  - Explore deep learning approaches")
-            report.append("  - Review data quality issues")
+            print(f"   Train: {len(splits['X_train'])} subjects")
+            print(f"   Validation: {len(splits['X_val'])} subjects")
+            print(f"   Test: {len(splits['X_test'])} subjects")
 
-        # Save report
-        output_dir = Path("baseline_results")
+        return splits
+
+    def save_processed_data(self, output_dir="processed_data"):
+        """Save all processed data"""
+        output_dir = Path(output_dir)
         output_dir.mkdir(exist_ok=True)
 
-        report_text = "\n".join(report)
-        with open(output_dir / "advanced_baseline_report.txt", "w") as f:
-            f.write(report_text)
+        # Save features
+        if 'features' in self.processed_data:
+            features_file = output_dir / "FINAL_features.csv"
+            self.processed_data['features'].to_csv(features_file, index=False)
+            print(f"✅ Saved features to {features_file}")
 
-        print(f"✅ Report saved to: {output_dir / 'advanced_baseline_report.txt'}")
+        # Save targets
+        if 'targets' in self.processed_data:
+            targets_file = output_dir / "FINAL_targets.json"
+            targets_json = {}
+            for k, v in self.processed_data['targets'].items():
+                if isinstance(v, np.ndarray):
+                    targets_json[k] = v.tolist()
+                else:
+                    targets_json[k] = v
 
-        return report_text
+            with open(targets_file, 'w') as f:
+                json.dump(targets_json, f, indent=2)
+            print(f"✅ Saved targets to {targets_file}")
 
-    def run_complete_improvement(self):
-        """Run complete baseline improvement pipeline"""
-        print("🚀 STARTING COMPLETE BASELINE IMPROVEMENT")
+        # Save splits
+        if 'splits' in self.processed_data:
+            splits_file = output_dir / "FINAL_splits.npz"
+            splits_to_save = {}
+            for k, v in self.processed_data['splits'].items():
+                if isinstance(v, np.ndarray):
+                    splits_to_save[k] = v
+                elif isinstance(v, (int, float, bool)):
+                    splits_to_save[k] = np.array([v])
+
+            np.savez(splits_file, **splits_to_save)
+            print(f"✅ Saved splits to {splits_file}")
+
+        # Save feature names
+        if 'feature_names' in self.processed_data:
+            feature_names_file = output_dir / "FINAL_feature_names.json"
+            with open(feature_names_file, 'w') as f:
+                json.dump(self.processed_data['feature_names'], f, indent=2)
+            print(f"✅ Saved feature names to {feature_names_file}")
+
+        # Comprehensive summary
+        target_list = [k for k in self.processed_data.get('targets', {}).keys()
+                       if not k.endswith('_indices') and not k.endswith('_ids') and not k.endswith('_types')]
+
+        summary = {
+            'processing_status': 'COMPLETED_SUCCESSFULLY',
+            'total_subjects': len(self.complete_subjects),
+            'complete_subjects': self.complete_subjects,
+            'feature_count': len(self.processed_data.get('feature_names', [])),
+            'target_variables': target_list,
+            'processing_timestamp': pd.Timestamp.now().isoformat(),
+            'data_quality_fixes': [
+                'ECG scaling validation and correction',
+                'Enhanced missing data handling',
+                'Relaxed inclusion criteria',
+                'Multiple target formulations',
+                'Robust binary stratification',
+                'Flexible file path detection'
+            ],
+            'feature_categories': self._analyze_feature_categories(),
+            'ready_for_modeling': True
+        }
+
+        summary_file = output_dir / "FINAL_SUMMARY.json"
+        with open(summary_file, 'w') as f:
+            json.dump(summary, f, indent=2)
+        print(f"✅ Saved comprehensive summary to {summary_file}")
+
+        return output_dir
+
+    def _analyze_feature_categories(self):
+        """Analyze feature categories for summary"""
+        if 'feature_names' not in self.processed_data:
+            return {}
+
+        feature_cols = self.processed_data['feature_names']
+
+        categories = {
+            'demographic': len([c for c in feature_cols if any(t in c.lower() for t in ['age', 'height', 'weight'])]),
+            'clinical_blood': len(
+                [c for c in feature_cols if any(t in c.upper() for t in ['WBC', 'HB', 'PLT', 'CRP'])]),
+            'clinical_metabolic': len([c for c in feature_cols if
+                                       any(t in c.upper() for t in ['ALT', 'AST', 'BUN', 'UA', 'TG', 'HDL', 'LDL'])]),
+            'clinical_bp': len([c for c in feature_cols if any(t in c.upper() for t in ['SBP', 'DBP'])]),
+            'ecg': len([c for c in feature_cols if c.startswith('ecg_')]),
+            'hrv': len([c for c in feature_cols if c.startswith('hrv_')]),
+            'sleep': len([c for c in feature_cols if 'sleep' in c.lower() or 'psqi' in c.lower() or 'cpc' in c.lower()])
+        }
+
+        return categories
+
+    def run_complete_pipeline(self):
+        """Run the complete FIXED preprocessing pipeline"""
+        print("🚀 STARTING COMPLETE FIXED PREPROCESSING PIPELINE")
+        print("=" * 60)
+        print("🔧 Fixes Applied:")
+        print("   ✅ ECG scaling validation and correction")
+        print("   ✅ Robust missing data handling")
+        print("   ✅ Enhanced sample size optimization")
+        print("   ✅ Fixed stratification logic")
+        print("   ✅ Flexible file path detection")
         print("=" * 60)
 
-        # Step 1: Load and analyze data
-        if not self.load_and_analyze_data():
-            return False
+        try:
+            # Load all data
+            self.load_clinical_data()
+            self.load_objective_sleep_data()
+            self.load_subjective_sleep_data()
 
-        # Step 2: Advanced feature engineering
-        self.advanced_feature_engineering()
+            # Create mapping with relaxed criteria
+            self.create_subject_mapping()
 
-        # Step 3: Intelligent feature selection
-        self.intelligent_feature_selection()
+            # Process subjects with enhanced features
+            self.process_all_subjects()
 
-        # Step 4: Advanced ensemble modeling
-        final_r2, final_mae = self.advanced_modeling_ensemble()
+            # Create robust splits
+            self.create_train_test_splits()
 
-        # Step 5: Comprehensive validation
-        self.advanced_validation_analysis()
+            # Save everything
+            output_dir = self.save_processed_data()
 
-        # Step 6: Generate report
-        self.generate_improvement_report()
+            print("\n🎉 PREPROCESSING PIPELINE COMPLETED SUCCESSFULLY!")
+            print("=" * 60)
+            print(f"📁 All data saved to: {output_dir}")
 
-        print("\n🎉 BASELINE IMPROVEMENT COMPLETED!")
-        print("=" * 60)
-        print(f"🏆 Final Performance:")
-        print(f"   R² Score: {final_r2:.3f}")
-        print(f"   MAE: {final_mae:.3f} mmol/L")
-        print("")
+            return self.processed_data
 
-        # Q1 readiness assessment
-        if final_r2 >= 0.6 and final_mae <= 0.8:
-            print("🎯 STATUS: Q1 JOURNAL READY! 🎉")
-            print("   Recommended action: Proceed with Q1 submission")
-        elif final_r2 >= 0.4 and final_mae <= 1.0:
-            print("🎯 STATUS: CONFERENCE READY! 📝")
-            print("   Recommended action: Submit to conference, continue improving")
-        else:
-            print("🎯 STATUS: NEEDS FURTHER IMPROVEMENT 🔧")
-            print("   Recommended action: Explore deep learning approaches")
-
-        return True
+        except Exception as e:
+            print(f"\n❌ PREPROCESSING FAILED: {e}")
+            raise
 
 
-# Usage example
+# Usage
 if __name__ == "__main__":
-    # Initialize improvement system
-    improver = AdvancedBaselineImprovement("processed_data")
+    print("🏁 COMPLETE FIXED DIABETES ECG PREPROCESSING")
+    print("=" * 60)
 
-    # Run complete improvement
-    success = improver.run_complete_improvement()
+    try:
+        preprocessor = CompleteDiabetesECGPreprocessor(".")
+        processed_data = preprocessor.run_complete_pipeline()
 
-    if success:
-        print("\n📊 NEXT STEPS FOR Q1 PUBLICATION:")
-        print("=" * 50)
-        print("1. Review advanced_baseline_report.txt")
-        print("2. Analyze feature importance patterns")
-        print("3. If R² > 0.6: Proceed with transformer architecture")
-        print("4. If R² < 0.6: Consider deep learning approaches")
-        print("5. Prepare manuscript focusing on methodology")
+        # Display final results
+        print("\n📊 FINAL DATASET SUMMARY:")
+        print("=" * 60)
+
+        targets = processed_data['targets']
+        splits = processed_data['splits']
+
+        print(f"✅ Total subjects with valid targets: {len(targets['subject_ids'])}")
+        print(f"✅ Total features: {len(processed_data['feature_names'])}")
+        print(
+            f"✅ Target variables: {[k for k in targets.keys() if not k.endswith('_indices') and not k.endswith('_ids') and not k.endswith('_types')]}")
+
+        if splits.get('use_cv', False):
+            print(f"✅ Validation: {splits['cv_folds']}-fold cross-validation")
+        else:
+            print(
+                f"✅ Data splits: {len(splits['X_train'])}/{len(splits['X_val'])}/{len(splits['X_test'])} (train/val/test)")
+
+        # Display target statistics
+        print(f"\n📈 Target Statistics:")
+        glucose_values = targets['primary_glucose']
+        print(f"   Primary glucose: {np.mean(glucose_values):.1f} ± {np.std(glucose_values):.1f} mmol/L")
+        print(f"   Glucose control distribution: {np.bincount(targets['glucose_control'])}")
+        print(
+            f"   Elevated glucose: {np.sum(targets['glucose_elevated'])}/{len(targets['glucose_elevated'])} subjects ({np.sum(targets['glucose_elevated']) / len(targets['glucose_elevated']) * 100:.1f}%)")
+
+    except Exception as e:
+        print(f"\n❌ FATAL ERROR: {e}")
+        print("Please check error messages above and fix issues.")
+        raise

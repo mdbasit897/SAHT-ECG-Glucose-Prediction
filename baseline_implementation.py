@@ -1,1268 +1,639 @@
 #!/usr/bin/env python3
 """
-Comprehensive Baseline Implementation for Diabetes ECG Research
-Publication-Quality Analysis with Multiple Algorithms and Visualizations
+Advanced Baseline Improvement Strategy for ECG-Glucose Prediction
+Target: Achieve R² > 0.6 for Q1 Publication
 """
 
 import pandas as pd
 import numpy as np
-import json
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.linear_model import ElasticNet, BayesianRidge
+from sklearn.feature_selection import SelectKBest, f_regression, RFE
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
+from sklearn.model_selection import LeaveOneOut, cross_val_score
+from sklearn.metrics import mean_absolute_error, r2_score
+import xgboost as xgb
+from scipy.stats import pearsonr, spearmanr
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
-import warnings
-
-warnings.filterwarnings('ignore')
-
-# Machine Learning Libraries
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
-from sklearn.ensemble import GradientBoostingRegressor, GradientBoostingClassifier
-from sklearn.svm import SVR, SVC
-from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge, Lasso
-from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
-from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
-import xgboost as xgb
-from sklearn.neural_network import MLPRegressor, MLPClassifier
-
-# Evaluation and Preprocessing
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.model_selection import cross_val_score, StratifiedKFold, KFold
-from sklearn.metrics import (mean_absolute_error, mean_squared_error, r2_score,
-                             accuracy_score, classification_report, confusion_matrix,
-                             roc_auc_score, roc_curve, precision_recall_curve,
-                             f1_score, precision_score, recall_score)
-
-# Statistical Analysis
-from scipy.stats import pearsonr, spearmanr, ttest_rel, wilcoxon
-from scipy.stats import normaltest, shapiro
-import scipy.stats as stats
-
-# Set style for publication-quality plots
-plt.style.use('seaborn-v0_8')
-sns.set_palette("husl")
-plt.rcParams['figure.figsize'] = (12, 8)
-plt.rcParams['font.size'] = 12
-plt.rcParams['axes.grid'] = True
 
 
-class ComprehensiveBaselineAnalysis:
+class AdvancedBaselineImprovement:
     def __init__(self, data_dir="processed_data"):
         self.data_dir = Path(data_dir)
         self.features = None
         self.targets = None
-        self.splits = None
-        self.feature_names = None
+        self.X_processed = None
+        self.y = None
 
-        self.regression_results = {}
-        self.classification_results = {}
-        self.feature_importance = {}
+        print("🚀 ADVANCED BASELINE IMPROVEMENT")
+        print("=" * 50)
+        print("🎯 Target: R² > 0.6 for Q1 Publication")
+        print("=" * 50)
 
-        print("🔬 COMPREHENSIVE BASELINE ANALYSIS")
-        print("=" * 60)
-        print("📊 Publication-Quality Evaluation Framework")
-        print("🎯 Multiple Algorithms | Statistical Analysis | Clinical Interpretation")
-        print("=" * 60)
+    def load_and_analyze_data(self):
+        """Load data and perform detailed analysis"""
+        print("📊 Loading and analyzing data...")
 
-    def load_processed_data(self):
-        """Load the preprocessed diabetes ECG dataset"""
-        print("📁 Loading processed dataset...")
+        # Load features and targets
+        self.features = pd.read_csv(self.data_dir / "FINAL_features.csv")
 
-        try:
-            # Check if data directory exists
-            if not self.data_dir.exists():
-                print(f"❌ Data directory does not exist: {self.data_dir}")
-                return False
+        with open(self.data_dir / "FINAL_targets.json", 'r') as f:
+            import json
+            targets_dict = json.load(f)
 
-            # Check for required files
-            required_files = [
-                "FINAL_features.csv",
-                "FINAL_targets.json",
-                "FINAL_splits.npz",
-                "FINAL_feature_names.json"
-            ]
+        self.targets = {k: np.array(v) for k, v in targets_dict.items()
+                        if isinstance(v, list)}
 
-            missing_files = []
-            for file in required_files:
-                if not (self.data_dir / file).exists():
-                    missing_files.append(file)
+        # Focus on primary glucose prediction
+        self.y = self.targets['primary_glucose']
 
-            if missing_files:
-                print(f"❌ Missing required files: {missing_files}")
-                print(f"📁 Available files in {self.data_dir}:")
-                for file in self.data_dir.iterdir():
-                    print(f"   - {file.name}")
-                return False
+        print(f"✅ Loaded {len(self.features)} subjects")
+        print(f"✅ Target range: {self.y.min():.1f} - {self.y.max():.1f} mmol/L")
+        print(f"✅ Target mean: {self.y.mean():.1f} ± {self.y.std():.1f} mmol/L")
 
-            # Load features
-            print("   Loading features...")
-            self.features = pd.read_csv(self.data_dir / "FINAL_features.csv")
+        return True
 
-            # Load targets
-            print("   Loading targets...")
-            with open(self.data_dir / "FINAL_targets.json", 'r') as f:
-                targets_dict = json.load(f)
-            self.targets = {k: np.array(v) for k, v in targets_dict.items()
-                            if isinstance(v, list)}
+    def advanced_feature_engineering(self):
+        """Create high-impact composite features"""
+        print("🔧 Advanced feature engineering...")
 
-            # Load splits (with allow_pickle=True to handle object arrays)
-            print("   Loading splits...")
-            splits_data = np.load(self.data_dir / "FINAL_splits.npz", allow_pickle=True)
-            self.splits = {k: v for k, v in splits_data.items()}
+        # Start with cleaned feature set
+        exclude_cols = ['subject_id', 'gender', 'Unnamed: 0'] + \
+                       [col for col in self.features.columns if any(term in col for term in
+                                                                    ['FBG', 'HbA1c', 'Diabetic', 'Coronary', 'Carotid',
+                                                                     'glucose'])]
 
-            # Load feature names
-            print("   Loading feature names...")
-            with open(self.data_dir / "FINAL_feature_names.json", 'r') as f:
-                self.feature_names = json.load(f)
+        feature_cols = [col for col in self.features.columns if col not in exclude_cols]
+        X_base = self.features[feature_cols].fillna(0)
 
-            print(f"✅ Dataset loaded successfully:")
-            print(f"   Subjects: {len(self.features)}")
-            print(f"   Features: {len(self.feature_names)}")
-            print(f"   Targets: {list(self.targets.keys())}")
+        # Convert to numeric and handle any remaining issues
+        for col in X_base.columns:
+            X_base[col] = pd.to_numeric(X_base[col], errors='coerce').fillna(0)
 
-            # Check split sizes
-            if 'X_train' in self.splits and 'X_val' in self.splits and 'X_test' in self.splits:
-                print(
-                    f"   Splits: {len(self.splits['X_train'])}/{len(self.splits['X_val'])}/{len(self.splits['X_test'])}")
-            else:
-                print(f"   Available split keys: {list(self.splits.keys())}")
+        print(f"   Base features: {len(feature_cols)}")
 
-            return True
+        # 1. Sleep-Metabolic Interaction Features
+        print("   Creating sleep-metabolic interactions...")
+        sleep_features = {}
 
-        except Exception as e:
-            print(f"❌ Error loading data: {e}")
-            print(f"📁 Checking data directory: {self.data_dir}")
-            if self.data_dir.exists():
-                print("   Available files:")
-                for file in self.data_dir.iterdir():
-                    print(f"     - {file.name}")
-            return False
+        # HRV sleep stage ratios
+        if 'hrv_ds_mean_rr' in X_base.columns and 'hrv_rem_mean_rr' in X_base.columns:
+            sleep_features['hrv_deep_rem_ratio'] = (X_base['hrv_ds_mean_rr'] /
+                                                    (X_base['hrv_rem_mean_rr'] + 1e-6))
 
-    def prepare_data_matrices(self):
-        """Prepare standardized data matrices for modeling"""
-        print("🔧 Preparing standardized data matrices...")
+        # Sleep efficiency indicators
+        if 'cpc_SSP (%)' in X_base.columns and 'cpc_USP (%)' in X_base.columns:
+            sleep_features['sleep_quality_index'] = (X_base['cpc_SSP (%)'] + X_base['cpc_RSP (%)']) / \
+                                                    (X_base['cpc_USP (%)'] + 1e-6)
 
-        try:
-            # Get feature columns (exclude non-features)
-            exclude_cols = ['subject_id', 'gender', 'Unnamed: 0'] + \
-                           [col for col in self.features.columns if any(term in col for term in
-                                                                        ['FBG', 'HbA1c', 'Diabetic', 'Coronary',
-                                                                         'Carotid',
-                                                                         'glucose'])]
+        # 2. Circadian-Metabolic Features
+        print("   Creating circadian-metabolic features...")
 
-            feature_cols = [col for col in self.features.columns if col not in exclude_cols]
-            print(f"   Selected {len(feature_cols)} feature columns")
+        # ECG circadian variation
+        if 'ecg_sleep_mean' in X_base.columns and 'ecg_day_mean' in X_base.columns:
+            sleep_features['ecg_circadian_ratio'] = X_base['ecg_sleep_mean'] / \
+                                                    (X_base['ecg_day_mean'] + 1e-6)
 
-            # Extract feature matrix and handle missing values
-            X = self.features[feature_cols].fillna(0).values
-            print(f"   Feature matrix shape: {X.shape}")
+        # HRV circadian patterns
+        if 'hrv_ds_std_rr' in X_base.columns and 'hrv_rem_std_rr' in X_base.columns:
+            sleep_features['hrv_variability_index'] = (X_base['hrv_ds_std_rr'] +
+                                                       X_base['hrv_rem_std_rr']) / 2
 
-            # Check for any remaining non-numeric data
-            if not np.issubdtype(X.dtype, np.number):
-                print("   Converting non-numeric data...")
-                # Convert to numeric, forcing errors to NaN then to 0
-                X_numeric = []
-                for i in range(X.shape[1]):
-                    col_data = pd.to_numeric(X[:, i], errors='coerce')
-                    col_data = np.nan_to_num(col_data, nan=0.0)
-                    X_numeric.append(col_data)
-                X = np.column_stack(X_numeric)
+        # 3. Autonomic Balance Features
+        print("   Creating autonomic balance features...")
 
-            # Standardize features
-            self.scaler = StandardScaler()
-            X_scaled = self.scaler.fit_transform(X)
+        # Sympathetic/Parasympathetic balance indicators
+        if 'hrv_ds_mean_hr' in X_base.columns and 'hrv_rem_mean_hr' in X_base.columns:
+            sleep_features['autonomic_balance'] = (X_base['hrv_ds_mean_hr'] -
+                                                   X_base['hrv_rem_mean_hr']) / \
+                                                  (X_base['hrv_ds_mean_hr'] +
+                                                   X_base['hrv_rem_mean_hr'] + 1e-6)
 
-            # Create train/val/test splits
-            n_train = len(self.splits['X_train'])
-            n_val = len(self.splits['X_val'])
+        # 4. Clinical-Physiological Interactions
+        print("   Creating clinical-physiological interactions...")
 
-            self.X_train = X_scaled[:n_train]
-            self.X_val = X_scaled[n_train:n_train + n_val]
-            self.X_test = X_scaled[n_train + n_val:]
+        # Age-adjusted features
+        if 'age' in X_base.columns:
+            for hrv_col in [col for col in X_base.columns if 'hrv_' in col]:
+                if X_base[hrv_col].std() > 0:
+                    sleep_features[f'{hrv_col}_age_adjusted'] = X_base[hrv_col] / \
+                                                                (X_base['age'] / 50 + 0.1)
 
-            # Extract targets for each split
-            self.y_splits = {}
-            for target_name in ['primary_glucose', 'glucose_control', 'glucose_elevated']:
-                if target_name in self.targets:
-                    y = self.targets[target_name]
-                    if len(y) >= (n_train + n_val):
-                        self.y_splits[target_name] = {
-                            'train': y[:n_train],
-                            'val': y[n_train:n_train + n_val],
-                            'test': y[n_train + n_val:]
-                        }
-                    else:
-                        print(f"   ⚠️ Target {target_name} has insufficient data: {len(y)}")
+        # BMI-adjusted features (if height/weight available)
+        if 'height' in X_base.columns and 'weight' in X_base.columns:
+            bmi = X_base['weight'] / ((X_base['height'] / 100) ** 2)
+            sleep_features['bmi'] = bmi
 
-            print(f"✅ Data matrices prepared:")
-            print(f"   Feature matrix: {X_scaled.shape}")
-            print(f"   Train: {self.X_train.shape}")
-            print(f"   Validation: {self.X_val.shape}")
-            print(f"   Test: {self.X_test.shape}")
-            print(f"   Available targets: {list(self.y_splits.keys())}")
+            # BMI-adjusted HRV
+            for hrv_col in [col for col in X_base.columns if 'hrv_' in col]:
+                if X_base[hrv_col].std() > 0:
+                    sleep_features[f'{hrv_col}_bmi_adjusted'] = X_base[hrv_col] / \
+                                                                (bmi / 25 + 0.1)
 
-            return feature_cols
+        # 5. Signal Quality Features
+        print("   Creating signal quality features...")
 
-        except Exception as e:
-            print(f"❌ Error preparing data matrices: {e}")
-            return None
+        # ECG quality indicators
+        snr_cols = [col for col in X_base.columns if 'snr' in col]
+        if snr_cols:
+            sleep_features['avg_signal_quality'] = X_base[snr_cols].mean(axis=1)
+            sleep_features['min_signal_quality'] = X_base[snr_cols].min(axis=1)
 
-    def initialize_baseline_models(self):
-        """Initialize comprehensive set of baseline models"""
-        print("🤖 Initializing baseline model ensemble...")
+        # Combine all features
+        engineered_df = pd.DataFrame(sleep_features, index=X_base.index)
+        X_enhanced = pd.concat([X_base, engineered_df], axis=1)
 
-        # Regression models for continuous glucose prediction
-        self.regression_models = {
-            'Linear Regression': LinearRegression(),
-            'Ridge Regression': Ridge(alpha=1.0),
-            'Lasso Regression': Lasso(alpha=0.1),
-            'Random Forest': RandomForestRegressor(n_estimators=100, random_state=42),
-            'Gradient Boosting': GradientBoostingRegressor(n_estimators=100, random_state=42),
-            'XGBoost': xgb.XGBRegressor(n_estimators=100, random_state=42, verbosity=0),
-            'Support Vector Regression': SVR(kernel='rbf', C=1.0),
-            'K-Nearest Neighbors': KNeighborsRegressor(n_neighbors=5),
-            'Decision Tree': DecisionTreeRegressor(random_state=42),
-            'Neural Network': MLPRegressor(hidden_layer_sizes=(64, 32), max_iter=500, random_state=42)
+        print(f"   ✅ Added {len(sleep_features)} engineered features")
+        print(f"   ✅ Total features: {len(X_enhanced.columns)}")
+
+        self.X_enhanced = X_enhanced
+        return X_enhanced
+
+    def intelligent_feature_selection(self):
+        """Apply multiple feature selection strategies"""
+        print("🎯 Intelligent feature selection...")
+
+        X = self.X_enhanced.values
+        y = self.y
+
+        # 1. Remove low-variance features
+        from sklearn.feature_selection import VarianceThreshold
+        var_selector = VarianceThreshold(threshold=0.01)
+        X_var = var_selector.fit_transform(X)
+        selected_features = self.X_enhanced.columns[var_selector.get_support()]
+
+        print(f"   After variance filter: {len(selected_features)} features")
+
+        # 2. Statistical significance filter
+        selector = SelectKBest(score_func=f_regression, k=min(50, len(selected_features)))
+        X_stat = selector.fit_transform(X_var, y)
+        stat_features = selected_features[selector.get_support()]
+
+        print(f"   After statistical filter: {len(stat_features)} features")
+
+        # 3. Correlation analysis
+        selected_df = self.X_enhanced[stat_features]
+
+        # Remove highly correlated features
+        corr_matrix = selected_df.corr().abs()
+        upper_triangle = corr_matrix.where(
+            np.triu(np.ones(corr_matrix.shape), k=1).astype(bool)
+        )
+
+        # Find features with correlation > 0.95
+        high_corr_features = [column for column in upper_triangle.columns
+                              if any(upper_triangle[column] > 0.95)]
+
+        final_features = [f for f in stat_features if f not in high_corr_features]
+
+        print(f"   After correlation filter: {len(final_features)} features")
+
+        # 4. Recursive Feature Elimination with Cross-Validation
+        if len(final_features) > 30:
+            rf_selector = RFE(RandomForestRegressor(n_estimators=50, random_state=42),
+                              n_features_to_select=25)
+            X_final = rf_selector.fit_transform(selected_df[final_features], y)
+            final_features = np.array(final_features)[rf_selector.get_support()]
+
+            print(f"   After RFE: {len(final_features)} features")
+
+        self.selected_features = final_features
+        self.X_selected = selected_df[final_features]
+
+        return self.X_selected
+
+    def advanced_modeling_ensemble(self):
+        """Implement sophisticated ensemble approach"""
+        print("🤖 Advanced ensemble modeling...")
+
+        X = self.X_selected.values
+        y = self.y
+
+        # Standardize features
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+
+        # 1. Base Models with Optimized Parameters
+        base_models = {
+            'ElasticNet': ElasticNet(alpha=0.1, l1_ratio=0.5, random_state=42),
+            'BayesianRidge': BayesianRidge(alpha_1=1e-6, alpha_2=1e-6,
+                                           lambda_1=1e-6, lambda_2=1e-6),
+            'RandomForest': RandomForestRegressor(n_estimators=200, max_depth=5,
+                                                  min_samples_split=3, random_state=42),
+            'GradientBoosting': GradientBoostingRegressor(n_estimators=200, max_depth=4,
+                                                          learning_rate=0.05, random_state=42),
+            'XGBoost': xgb.XGBRegressor(n_estimators=200, max_depth=4,
+                                        learning_rate=0.05, random_state=42, verbosity=0)
         }
 
-        # Classification models for categorical predictions
-        self.classification_models = {
-            'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-            'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42),
-            'Gradient Boosting': GradientBoostingClassifier(n_estimators=100, random_state=42),
-            'XGBoost': xgb.XGBClassifier(n_estimators=100, random_state=42, verbosity=0),
-            'Support Vector Classifier': SVC(kernel='rbf', C=1.0, probability=True, random_state=42),
-            'K-Nearest Neighbors': KNeighborsClassifier(n_neighbors=5),
-            'Decision Tree': DecisionTreeClassifier(random_state=42),
-            'Neural Network': MLPClassifier(hidden_layer_sizes=(64, 32), max_iter=500, random_state=42)
-        }
+        # 2. Cross-validation with Leave-One-Out
+        loo = LeaveOneOut()
+        cv_predictions = np.zeros((len(y), len(base_models)))
+        cv_scores = {}
 
-        print(f"✅ Initialized {len(self.regression_models)} regression models")
-        print(f"✅ Initialized {len(self.classification_models)} classification models")
+        print("   Performing Leave-One-Out cross-validation...")
 
-    def evaluate_regression_models(self):
-        """Comprehensive evaluation of regression models for glucose prediction"""
-        print("📈 Evaluating regression models for primary glucose prediction...")
+        for i, (model_name, model) in enumerate(base_models.items()):
+            print(f"     {model_name}...")
 
-        target_name = 'primary_glucose'
-        if target_name not in self.y_splits:
-            print(f"❌ Target {target_name} not available")
-            return None
+            fold_predictions = []
+            fold_scores = []
 
-        y_train = self.y_splits[target_name]['train']
-        y_val = self.y_splits[target_name]['val']
-        y_test = self.y_splits[target_name]['test']
+            for train_idx, test_idx in loo.split(X_scaled):
+                X_train, X_test = X_scaled[train_idx], X_scaled[test_idx]
+                y_train, y_test = y[train_idx], y[test_idx]
 
-        results = []
-        predictions = {}
-
-        for model_name, model in self.regression_models.items():
-            print(f"   Training {model_name}...")
-
-            try:
                 # Train model
-                model.fit(self.X_train, y_train)
+                model.fit(X_train, y_train)
 
-                # Make predictions
-                y_train_pred = model.predict(self.X_train)
-                y_val_pred = model.predict(self.X_val)
-                y_test_pred = model.predict(self.X_test)
+                # Predict
+                y_pred = model.predict(X_test)
+                fold_predictions.append(y_pred[0])
 
-                # Calculate metrics
-                train_mae = mean_absolute_error(y_train, y_train_pred)
-                train_rmse = np.sqrt(mean_squared_error(y_train, y_train_pred))
-                train_r2 = r2_score(y_train, y_train_pred)
+                # Calculate score for this fold
+                fold_scores.append(r2_score([y_test[0]], [y_pred[0]]))
 
-                val_mae = mean_absolute_error(y_val, y_val_pred)
-                val_rmse = np.sqrt(mean_squared_error(y_val, y_val_pred))
-                val_r2 = r2_score(y_val, y_val_pred)
+            cv_predictions[:, i] = fold_predictions
+            cv_scores[model_name] = {
+                'CV_R2': np.mean(fold_scores),
+                'CV_MAE': mean_absolute_error(y, fold_predictions),
+                'CV_R2_full': r2_score(y, fold_predictions)
+            }
 
-                test_mae = mean_absolute_error(y_test, y_test_pred)
-                test_rmse = np.sqrt(mean_squared_error(y_test, y_test_pred))
-                test_r2 = r2_score(y_test, y_test_pred)
+            print(f"       R²: {cv_scores[model_name]['CV_R2_full']:.3f}, "
+                  f"MAE: {cv_scores[model_name]['CV_MAE']:.3f}")
 
-                # Cross-validation
-                cv_scores = cross_val_score(model, self.X_train, y_train,
-                                            cv=5, scoring='neg_mean_absolute_error')
-                cv_mae = -cv_scores.mean()
-                cv_std = cv_scores.std()
+        # 3. Meta-Learning Ensemble
+        print("   Training meta-learner...")
 
-                # Store results
-                result = {
-                    'Model': model_name,
-                    'Train_MAE': train_mae,
-                    'Train_RMSE': train_rmse,
-                    'Train_R2': train_r2,
-                    'Val_MAE': val_mae,
-                    'Val_RMSE': val_rmse,
-                    'Val_R2': val_r2,
-                    'Test_MAE': test_mae,
-                    'Test_RMSE': test_rmse,
-                    'Test_R2': test_r2,
-                    'CV_MAE': cv_mae,
-                    'CV_STD': cv_std
-                }
+        # Use cross-validated predictions as features for meta-learner
+        meta_model = ElasticNet(alpha=0.01, random_state=42)
 
-                results.append(result)
+        # Train meta-model using LOO on the base predictions
+        meta_predictions = []
 
-                # Store predictions for analysis
-                predictions[model_name] = {
-                    'train_true': y_train,
-                    'train_pred': y_train_pred,
-                    'val_true': y_val,
-                    'val_pred': y_val_pred,
-                    'test_true': y_test,
-                    'test_pred': y_test_pred
-                }
+        for train_idx, test_idx in loo.split(cv_predictions):
+            X_meta_train = cv_predictions[train_idx]
+            y_meta_train = y[train_idx]
+            X_meta_test = cv_predictions[test_idx]
 
-                # Store feature importance if available
-                if hasattr(model, 'feature_importances_'):
-                    self.feature_importance[model_name] = model.feature_importances_
-                elif hasattr(model, 'coef_'):
-                    self.feature_importance[model_name] = np.abs(model.coef_)
+            meta_model.fit(X_meta_train, y_meta_train)
+            meta_pred = meta_model.predict(X_meta_test)
+            meta_predictions.append(meta_pred[0])
 
-                print(f"     R²: {test_r2:.3f}, MAE: {test_mae:.3f}")
+        meta_predictions = np.array(meta_predictions)
 
-            except Exception as e:
-                print(f"   ⚠️ Error with {model_name}: {e}")
-                continue
+        # Calculate ensemble performance
+        ensemble_r2 = r2_score(y, meta_predictions)
+        ensemble_mae = mean_absolute_error(y, meta_predictions)
 
-        if not results:
-            print("❌ No models completed successfully")
-            return None
+        print(f"   🎯 Ensemble Performance:")
+        print(f"     R²: {ensemble_r2:.3f}")
+        print(f"     MAE: {ensemble_mae:.3f} mmol/L")
 
-        self.regression_results = {
-            'results_df': pd.DataFrame(results),
-            'predictions': predictions
+        # Store results
+        self.base_models = base_models
+        self.cv_scores = cv_scores
+        self.meta_model = meta_model
+        self.ensemble_predictions = meta_predictions
+        self.ensemble_performance = {
+            'R2': ensemble_r2,
+            'MAE': ensemble_mae
         }
 
-        print(f"✅ Completed regression evaluation for {len(results)} models")
-        return self.regression_results
-
-    def evaluate_classification_models(self):
-        """Comprehensive evaluation of classification models"""
-        print("📊 Evaluating classification models for glucose control prediction...")
-
-        results = {}
-
-        for target_name in ['glucose_control', 'glucose_elevated']:
-            if target_name not in self.y_splits:
-                print(f"   ⚠️ Target {target_name} not available, skipping...")
-                continue
-
-            print(f"   Evaluating {target_name}...")
-
-            y_train = self.y_splits[target_name]['train']
-            y_val = self.y_splits[target_name]['val']
-            y_test = self.y_splits[target_name]['test']
-
-            # Check if we have valid classification targets
-            unique_train = np.unique(y_train)
-            if len(unique_train) < 2:
-                print(f"   ⚠️ Insufficient classes in {target_name} training data: {unique_train}")
-                continue
-
-            target_results = []
-            target_predictions = {}
-
-            for model_name, model in self.classification_models.items():
-                try:
-                    # Train model
-                    model.fit(self.X_train, y_train)
-
-                    # Make predictions
-                    y_train_pred = model.predict(self.X_train)
-                    y_val_pred = model.predict(self.X_val)
-                    y_test_pred = model.predict(self.X_test)
-
-                    # Get prediction probabilities if available
-                    try:
-                        y_train_proba = model.predict_proba(self.X_train)
-                        y_val_proba = model.predict_proba(self.X_val)
-                        y_test_proba = model.predict_proba(self.X_test)
-                    except:
-                        y_train_proba = None
-                        y_val_proba = None
-                        y_test_proba = None
-
-                    # Calculate metrics
-                    train_acc = accuracy_score(y_train, y_train_pred)
-                    val_acc = accuracy_score(y_val, y_val_pred)
-                    test_acc = accuracy_score(y_test, y_test_pred)
-
-                    train_f1 = f1_score(y_train, y_train_pred, average='weighted')
-                    val_f1 = f1_score(y_val, y_val_pred, average='weighted')
-                    test_f1 = f1_score(y_test, y_test_pred, average='weighted')
-
-                    # AUC calculation
-                    try:
-                        if target_name == 'glucose_elevated' and len(unique_train) == 2:
-                            # Binary classification
-                            if y_train_proba is not None:
-                                train_auc = roc_auc_score(y_train, y_train_proba[:, 1])
-                                val_auc = roc_auc_score(y_val, y_val_proba[:, 1])
-                                test_auc = roc_auc_score(y_test, y_test_proba[:, 1])
-                            else:
-                                train_auc = val_auc = test_auc = np.nan
-                        else:
-                            # Multi-class AUC
-                            if y_train_proba is not None:
-                                train_auc = roc_auc_score(y_train, y_train_proba, multi_class='ovr')
-                                val_auc = roc_auc_score(y_val, y_val_proba, multi_class='ovr')
-                                test_auc = roc_auc_score(y_test, y_test_proba, multi_class='ovr')
-                            else:
-                                train_auc = val_auc = test_auc = np.nan
-                    except Exception as auc_error:
-                        print(f"     ⚠️ AUC calculation failed for {model_name}: {auc_error}")
-                        train_auc = val_auc = test_auc = np.nan
-
-                    # Cross-validation
-                    cv_scores = cross_val_score(model, self.X_train, y_train,
-                                                cv=5, scoring='accuracy')
-                    cv_acc = cv_scores.mean()
-                    cv_std = cv_scores.std()
-
-                    # Store results
-                    result = {
-                        'Model': model_name,
-                        'Train_Acc': train_acc,
-                        'Train_F1': train_f1,
-                        'Train_AUC': train_auc,
-                        'Val_Acc': val_acc,
-                        'Val_F1': val_f1,
-                        'Val_AUC': val_auc,
-                        'Test_Acc': test_acc,
-                        'Test_F1': test_f1,
-                        'Test_AUC': test_auc,
-                        'CV_Acc': cv_acc,
-                        'CV_STD': cv_std
-                    }
-
-                    target_results.append(result)
-
-                    # Store predictions
-                    target_predictions[model_name] = {
-                        'train_true': y_train,
-                        'train_pred': y_train_pred,
-                        'val_true': y_val,
-                        'val_pred': y_val_pred,
-                        'test_true': y_test,
-                        'test_pred': y_test_pred,
-                        'train_proba': y_train_proba,
-                        'val_proba': y_val_proba,
-                        'test_proba': y_test_proba
-                    }
-
-                    print(f"     {model_name}: Acc={test_acc:.3f}, F1={test_f1:.3f}")
-
-                except Exception as e:
-                    print(f"   ⚠️ Error with {model_name} for {target_name}: {e}")
-                    continue
-
-            if target_results:
-                results[target_name] = {
-                    'results_df': pd.DataFrame(target_results),
-                    'predictions': target_predictions
-                }
-
-        self.classification_results = results
-        print(f"✅ Completed classification evaluation for {len(results)} targets")
-        return self.classification_results
-
-    def create_performance_visualizations(self):
-        """Create comprehensive performance visualizations"""
-        print("📊 Creating publication-quality visualizations...")
-
-        # Create output directory
-        output_dir = Path("baseline_results")
-        output_dir.mkdir(exist_ok=True)
-
-        # 1. Regression Performance Summary
-        if self.regression_results:
-            self._plot_regression_performance(output_dir)
-
-        # 2. Classification Performance Summary
-        if self.classification_results:
-            self._plot_classification_performance(output_dir)
-
-        # 3. Model Comparison Heatmaps
-        self._plot_performance_heatmaps(output_dir)
-
-        # 4. Prediction vs Actual Plots
-        if self.regression_results:
-            self._plot_prediction_scatter(output_dir)
-
-        # 5. Feature Importance Analysis
-        if self.feature_importance:
-            self._plot_feature_importance(output_dir)
-
-        # 6. Error Analysis
-        if self.regression_results:
-            self._plot_error_analysis(output_dir)
-
-        # 7. Cross-Validation Analysis
-        if self.regression_results:
-            self._plot_cross_validation_analysis(output_dir)
-
-        # 8. Clinical Interpretation Plots
-        if self.regression_results:
-            self._plot_clinical_interpretation(output_dir)
-
-        print(f"✅ All visualizations saved to: {output_dir}")
-
-    def _plot_regression_performance(self, output_dir):
-        """Plot comprehensive regression performance analysis"""
-        if not self.regression_results or 'results_df' not in self.regression_results:
-            return
-
-        df = self.regression_results['results_df'].copy()
-        if df.empty:
-            return
-
-        # Sort by validation performance
-        df = df.sort_values('Val_R2', ascending=True)
-
-        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-        fig.suptitle('Regression Model Performance - Primary Glucose Prediction', fontsize=16, fontweight='bold')
-
-        # MAE comparison
-        axes[0, 0].barh(df['Model'], df['Test_MAE'], color='lightcoral', alpha=0.7)
-        axes[0, 0].set_xlabel('Mean Absolute Error (mmol/L)')
-        axes[0, 0].set_title('Test Set MAE')
-        axes[0, 0].grid(True, alpha=0.3)
-
-        # R² comparison
-        axes[0, 1].barh(df['Model'], df['Test_R2'], color='lightblue', alpha=0.7)
-        axes[0, 1].set_xlabel('R² Score')
-        axes[0, 1].set_title('Test Set R²')
-        axes[0, 1].grid(True, alpha=0.3)
-
-        # Training vs Validation R²
-        x = np.arange(len(df))
-        width = 0.35
-        axes[1, 0].bar(x - width / 2, df['Train_R2'], width, label='Training', alpha=0.7)
-        axes[1, 0].bar(x + width / 2, df['Val_R2'], width, label='Validation', alpha=0.7)
-        axes[1, 0].set_xlabel('Models')
-        axes[1, 0].set_ylabel('R² Score')
-        axes[1, 0].set_title('Training vs Validation R²')
-        axes[1, 0].set_xticks(x)
-        axes[1, 0].set_xticklabels(df['Model'], rotation=45, ha='right')
-        axes[1, 0].legend()
-        axes[1, 0].grid(True, alpha=0.3)
-
-        # Cross-validation with error bars
-        axes[1, 1].errorbar(range(len(df)), df['CV_MAE'], yerr=df['CV_STD'],
-                            fmt='o', capsize=5, capthick=2)
-        axes[1, 1].set_xlabel('Models')
-        axes[1, 1].set_ylabel('Cross-Validation MAE (mmol/L)')
-        axes[1, 1].set_title('Cross-Validation Performance')
-        axes[1, 1].set_xticks(range(len(df)))
-        axes[1, 1].set_xticklabels(df['Model'], rotation=45, ha='right')
-        axes[1, 1].grid(True, alpha=0.3)
-
-        plt.tight_layout()
-        plt.savefig(output_dir / 'regression_performance_summary.png', dpi=300, bbox_inches='tight')
-        plt.close()
-
-    def _plot_classification_performance(self, output_dir):
-        """Plot comprehensive classification performance analysis"""
-        for target_name, results in self.classification_results.items():
-            if 'results_df' not in results or results['results_df'].empty:
-                continue
-
-            df = results['results_df'].copy()
-            # Sort by AUC, handling NaN values
-            df = df.sort_values('Test_AUC', ascending=True, na_position='first')
-
-            fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-            fig.suptitle(f'Classification Performance - {target_name.replace("_", " ").title()}',
-                         fontsize=16, fontweight='bold')
-
-            # Accuracy comparison
-            axes[0, 0].barh(df['Model'], df['Test_Acc'], color='lightgreen', alpha=0.7)
-            axes[0, 0].set_xlabel('Accuracy')
-            axes[0, 0].set_title('Test Set Accuracy')
-            axes[0, 0].grid(True, alpha=0.3)
-
-            # AUC comparison (skip if all NaN)
-            if not df['Test_AUC'].isna().all():
-                valid_auc = df.dropna(subset=['Test_AUC'])
-                axes[0, 1].barh(valid_auc['Model'], valid_auc['Test_AUC'], color='orange', alpha=0.7)
-                axes[0, 1].set_xlabel('AUC Score')
-                axes[0, 1].set_title('Test Set AUC')
-                axes[0, 1].grid(True, alpha=0.3)
-            else:
-                axes[0, 1].text(0.5, 0.5, 'AUC not available', ha='center', va='center',
-                                transform=axes[0, 1].transAxes)
-
-            # F1 Score comparison
-            axes[1, 0].barh(df['Model'], df['Test_F1'], color='purple', alpha=0.7)
-            axes[1, 0].set_xlabel('F1 Score')
-            axes[1, 0].set_title('Test Set F1 Score')
-            axes[1, 0].grid(True, alpha=0.3)
-
-            # Cross-validation accuracy
-            axes[1, 1].errorbar(range(len(df)), df['CV_Acc'], yerr=df['CV_STD'],
-                                fmt='o', capsize=5, capthick=2)
-            axes[1, 1].set_xlabel('Models')
-            axes[1, 1].set_ylabel('Cross-Validation Accuracy')
-            axes[1, 1].set_title('Cross-Validation Performance')
-            axes[1, 1].set_xticks(range(len(df)))
-            axes[1, 1].set_xticklabels(df['Model'], rotation=45, ha='right')
-            axes[1, 1].grid(True, alpha=0.3)
-
-            plt.tight_layout()
-            plt.savefig(output_dir / f'classification_performance_{target_name}.png',
-                        dpi=300, bbox_inches='tight')
-            plt.close()
-
-    def _plot_performance_heatmaps(self, output_dir):
-        """Create performance comparison heatmaps"""
-        # Regression heatmap
-        if self.regression_results and 'results_df' in self.regression_results:
-            df_reg = self.regression_results['results_df'].copy()
-            if not df_reg.empty:
-                # Select key metrics for heatmap
-                metrics = ['Train_R2', 'Val_R2', 'Test_R2', 'Train_MAE', 'Val_MAE', 'Test_MAE']
-                heatmap_data = df_reg.set_index('Model')[metrics]
-
-                plt.figure(figsize=(12, 8))
-                sns.heatmap(heatmap_data, annot=True, cmap='RdYlBu_r', center=0,
-                            fmt='.3f', cbar_kws={'label': 'Performance Score'})
-                plt.title('Regression Model Performance Heatmap', fontsize=16, fontweight='bold')
-                plt.xlabel('Metrics')
-                plt.ylabel('Models')
-                plt.tight_layout()
-                plt.savefig(output_dir / 'regression_performance_heatmap.png', dpi=300, bbox_inches='tight')
-                plt.close()
-
-        # Classification heatmaps
-        for target_name, results in self.classification_results.items():
-            if 'results_df' not in results or results['results_df'].empty:
-                continue
-
-            df_clf = results['results_df'].copy()
-
-            metrics = ['Train_Acc', 'Val_Acc', 'Test_Acc', 'Train_AUC', 'Val_AUC', 'Test_AUC']
-            heatmap_data = df_clf.set_index('Model')[metrics]
-
-            plt.figure(figsize=(12, 8))
-            sns.heatmap(heatmap_data, annot=True, cmap='RdYlBu_r', center=0.5,
-                        fmt='.3f', cbar_kws={'label': 'Performance Score'})
-            plt.title(f'Classification Performance Heatmap - {target_name.replace("_", " ").title()}',
-                      fontsize=16, fontweight='bold')
-            plt.xlabel('Metrics')
-            plt.ylabel('Models')
-            plt.tight_layout()
-            plt.savefig(output_dir / f'classification_heatmap_{target_name}.png',
-                        dpi=300, bbox_inches='tight')
-            plt.close()
-
-    def _plot_prediction_scatter(self, output_dir):
-        """Create prediction vs actual scatter plots"""
-        if not self.regression_results or 'predictions' not in self.regression_results:
-            return
-
-        predictions = self.regression_results['predictions']
-        if not predictions:
-            return
-
-        # Get best performing models
-        df = self.regression_results['results_df']
-        best_models = df.nlargest(min(3, len(df)), 'Test_R2')['Model'].tolist()
-
-        fig, axes = plt.subplots(1, len(best_models), figsize=(6 * len(best_models), 6))
-        if len(best_models) == 1:
-            axes = [axes]
-
-        for i, model_name in enumerate(best_models):
-            if model_name not in predictions:
-                continue
-
-            pred_data = predictions[model_name]
-
-            # Plot test set predictions
-            y_true = pred_data['test_true']
-            y_pred = pred_data['test_pred']
-
-            axes[i].scatter(y_true, y_pred, alpha=0.7, s=50)
-
-            # Perfect prediction line
-            min_val = min(y_true.min(), y_pred.min())
-            max_val = max(y_true.max(), y_pred.max())
-            axes[i].plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='Perfect Prediction')
-
-            # Calculate metrics
-            r2 = r2_score(y_true, y_pred)
-            mae = mean_absolute_error(y_true, y_pred)
-
-            axes[i].set_xlabel('Actual Glucose (mmol/L)')
-            axes[i].set_ylabel('Predicted Glucose (mmol/L)')
-            axes[i].set_title(f'{model_name}\nR² = {r2:.3f}, MAE = {mae:.3f}')
-            axes[i].legend()
-            axes[i].grid(True, alpha=0.3)
-
-        plt.suptitle('Prediction vs Actual - Best Performing Models', fontsize=16, fontweight='bold')
-        plt.tight_layout()
-        plt.savefig(output_dir / 'prediction_scatter_plots.png', dpi=300, bbox_inches='tight')
-        plt.close()
-
-    def _plot_feature_importance(self, output_dir):
-        """Plot feature importance analysis"""
-        if not self.feature_importance:
-            return
-
-        # Select models with feature importance
-        models_with_importance = ['Random Forest', 'Gradient Boosting', 'XGBoost']
-        available_models = [m for m in models_with_importance if m in self.feature_importance]
-
-        if not available_models:
-            return
-
-        fig, axes = plt.subplots(len(available_models), 1, figsize=(14, 6 * len(available_models)))
-        if len(available_models) == 1:
-            axes = [axes]
-
-        for i, model_name in enumerate(available_models):
-            importance = self.feature_importance[model_name]
-
-            # Get top 20 features
-            top_indices = np.argsort(importance)[-20:]
-            top_features = [self.feature_names[j] if j < len(self.feature_names) else f'Feature_{j}'
-                            for j in top_indices]
-            top_importance = importance[top_indices]
-
-            axes[i].barh(range(len(top_features)), top_importance)
-            axes[i].set_yticks(range(len(top_features)))
-            axes[i].set_yticklabels(top_features)
-            axes[i].set_xlabel('Feature Importance')
-            axes[i].set_title(f'Top 20 Features - {model_name}')
-            axes[i].grid(True, alpha=0.3)
-
-        plt.suptitle('Feature Importance Analysis', fontsize=16, fontweight='bold')
-        plt.tight_layout()
-        plt.savefig(output_dir / 'feature_importance_analysis.png', dpi=300, bbox_inches='tight')
-        plt.close()
-
-    def _plot_error_analysis(self, output_dir):
-        """Create error analysis visualizations"""
-        if not self.regression_results or 'predictions' not in self.regression_results:
-            return
-
-        predictions = self.regression_results['predictions']
-        if not predictions:
-            return
-
-        # Get best model
-        df = self.regression_results['results_df']
-        best_model = df.loc[df['Test_R2'].idxmax(), 'Model']
-
-        if best_model not in predictions:
-            return
-
-        pred_data = predictions[best_model]
-
-        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-        fig.suptitle(f'Error Analysis - {best_model}', fontsize=16, fontweight='bold')
+        return ensemble_r2, ensemble_mae
+
+    def advanced_validation_analysis(self):
+        """Perform comprehensive validation analysis"""
+        print("📊 Advanced validation analysis...")
+
+        y_true = self.y
+        y_pred = self.ensemble_predictions
+
+        # 1. Statistical Significance Tests
+        from scipy.stats import pearsonr, spearmanr, ttest_1samp
+
+        # Correlation analysis
+        pearson_r, pearson_p = pearsonr(y_true, y_pred)
+        spearman_r, spearman_p = spearmanr(y_true, y_pred)
+
+        # Error analysis
+        errors = y_pred - y_true
+        _, normality_p = ttest_1samp(errors, 0)
+
+        print(f"   Statistical Analysis:")
+        print(f"     Pearson correlation: r={pearson_r:.3f}, p={pearson_p:.3f}")
+        print(f"     Spearman correlation: r={spearman_r:.3f}, p={spearman_p:.3f}")
+        print(f"     Error bias test: p={normality_p:.3f}")
+
+        # 2. Clinical Significance Analysis
+        clinical_thresholds = [0.5, 1.0, 1.5, 2.0]
+        abs_errors = np.abs(errors)
+
+        print(f"   Clinical Acceptance Rates:")
+        for threshold in clinical_thresholds:
+            rate = np.mean(abs_errors <= threshold) * 100
+            print(f"     Within ±{threshold} mmol/L: {rate:.1f}%")
+
+        # 3. Residual Analysis
+        plt.figure(figsize=(15, 10))
+
+        # Prediction vs Actual
+        plt.subplot(2, 3, 1)
+        plt.scatter(y_true, y_pred, alpha=0.7)
+        plt.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], 'r--')
+        plt.xlabel('Actual Glucose (mmol/L)')
+        plt.ylabel('Predicted Glucose (mmol/L)')
+        plt.title(f'Prediction vs Actual\nR² = {self.ensemble_performance["R2"]:.3f}')
+
+        # Residuals
+        plt.subplot(2, 3, 2)
+        plt.scatter(y_pred, errors, alpha=0.7)
+        plt.axhline(0, color='red', linestyle='--')
+        plt.xlabel('Predicted Glucose (mmol/L)')
+        plt.ylabel('Residuals (mmol/L)')
+        plt.title('Residuals vs Predicted')
 
         # Error distribution
-        errors = pred_data['test_pred'] - pred_data['test_true']
-        axes[0, 0].hist(errors, bins=15, alpha=0.7, edgecolor='black')
-        axes[0, 0].set_xlabel('Prediction Error (mmol/L)')
-        axes[0, 0].set_ylabel('Frequency')
-        axes[0, 0].set_title('Error Distribution')
-        axes[0, 0].axvline(0, color='red', linestyle='--', alpha=0.7)
-        axes[0, 0].grid(True, alpha=0.3)
+        plt.subplot(2, 3, 3)
+        plt.hist(errors, bins=10, alpha=0.7, edgecolor='black')
+        plt.axvline(0, color='red', linestyle='--')
+        plt.xlabel('Prediction Error (mmol/L)')
+        plt.ylabel('Frequency')
+        plt.title('Error Distribution')
 
-        # Residuals vs Predicted
-        axes[0, 1].scatter(pred_data['test_pred'], errors, alpha=0.7)
-        axes[0, 1].set_xlabel('Predicted Glucose (mmol/L)')
-        axes[0, 1].set_ylabel('Residuals (mmol/L)')
-        axes[0, 1].set_title('Residuals vs Predicted')
-        axes[0, 1].axhline(0, color='red', linestyle='--', alpha=0.7)
-        axes[0, 1].grid(True, alpha=0.3)
+        # Model comparison
+        plt.subplot(2, 3, 4)
+        model_names = list(self.cv_scores.keys()) + ['Ensemble']
+        r2_scores = [self.cv_scores[name]['CV_R2_full'] for name in self.cv_scores.keys()] + \
+                    [self.ensemble_performance['R2']]
 
-        # Q-Q plot for normality check
-        try:
-            from scipy.stats import probplot
-            probplot(errors, dist="norm", plot=axes[1, 0])
-            axes[1, 0].set_title('Q-Q Plot - Error Normality')
-            axes[1, 0].grid(True, alpha=0.3)
-        except:
-            axes[1, 0].text(0.5, 0.5, 'Q-Q plot unavailable', ha='center', va='center',
-                            transform=axes[1, 0].transAxes)
+        bars = plt.bar(range(len(model_names)), r2_scores)
+        bars[-1].set_color('red')  # Highlight ensemble
+        plt.xticks(range(len(model_names)), model_names, rotation=45)
+        plt.ylabel('R² Score')
+        plt.title('Model Comparison')
 
-        # Error by glucose range
-        try:
-            glucose_ranges = pd.cut(pred_data['test_true'], bins=3, labels=['Low', 'Medium', 'High'])
-            error_by_range = pd.DataFrame({'Range': glucose_ranges, 'Error': np.abs(errors)})
-            error_by_range.boxplot(column='Error', by='Range', ax=axes[1, 1])
-            axes[1, 1].set_xlabel('Glucose Range')
-            axes[1, 1].set_ylabel('Absolute Error (mmol/L)')
-            axes[1, 1].set_title('Error by Glucose Range')
-        except:
-            axes[1, 1].text(0.5, 0.5, 'Range analysis unavailable', ha='center', va='center',
-                            transform=axes[1, 1].transAxes)
+        # Clinical zones
+        plt.subplot(2, 3, 5)
+        clinical_zones = ['<7.0', '7.0-8.5', '>8.5']
+        actual_counts = [np.sum(y_true < 7.0),
+                         np.sum((y_true >= 7.0) & (y_true < 8.5)),
+                         np.sum(y_true >= 8.5)]
+        predicted_counts = [np.sum(y_pred < 7.0),
+                            np.sum((y_pred >= 7.0) & (y_pred < 8.5)),
+                            np.sum(y_pred >= 8.5)]
 
-        plt.tight_layout()
-        plt.savefig(output_dir / 'error_analysis.png', dpi=300, bbox_inches='tight')
-        plt.close()
-
-    def _plot_cross_validation_analysis(self, output_dir):
-        """Create cross-validation analysis"""
-        if not self.regression_results or 'results_df' not in self.regression_results:
-            return
-
-        df = self.regression_results['results_df'].copy()
-        if df.empty:
-            return
-
-        # Sort by CV performance
-        df = df.sort_values('CV_MAE')
-
-        plt.figure(figsize=(14, 8))
-
-        # Create error bar plot
-        x_pos = np.arange(len(df))
-        plt.errorbar(x_pos, df['CV_MAE'], yerr=df['CV_STD'],
-                     fmt='o', capsize=5, capthick=2, markersize=8)
-
-        plt.xlabel('Models')
-        plt.ylabel('Cross-Validation MAE (mmol/L)')
-        plt.title('Cross-Validation Performance with Standard Deviation', fontsize=16, fontweight='bold')
-        plt.xticks(x_pos, df['Model'], rotation=45, ha='right')
-        plt.grid(True, alpha=0.3)
-
-        # Add performance thresholds
-        plt.axhline(y=1.0, color='green', linestyle='--', alpha=0.7, label='Excellent (MAE < 1.0)')
-        plt.axhline(y=1.5, color='orange', linestyle='--', alpha=0.7, label='Good (MAE < 1.5)')
-        plt.axhline(y=2.0, color='red', linestyle='--', alpha=0.7, label='Acceptable (MAE < 2.0)')
-
+        x = np.arange(len(clinical_zones))
+        width = 0.35
+        plt.bar(x - width / 2, actual_counts, width, label='Actual', alpha=0.7)
+        plt.bar(x + width / 2, predicted_counts, width, label='Predicted', alpha=0.7)
+        plt.xlabel('Glucose Control Zones (mmol/L)')
+        plt.ylabel('Number of Subjects')
+        plt.title('Clinical Zone Distribution')
+        plt.xticks(x, clinical_zones)
         plt.legend()
-        plt.tight_layout()
-        plt.savefig(output_dir / 'cross_validation_analysis.png', dpi=300, bbox_inches='tight')
-        plt.close()
 
-    def _plot_clinical_interpretation(self, output_dir):
-        """Create clinical interpretation visualizations"""
-        if not self.regression_results or 'predictions' not in self.regression_results:
-            return
+        # Feature importance (if available)
+        plt.subplot(2, 3, 6)
+        if hasattr(self.base_models['RandomForest'], 'feature_importances_'):
+            importance = self.base_models['RandomForest'].feature_importances_
+            top_indices = np.argsort(importance)[-10:]
+            top_features = [self.selected_features[i] for i in top_indices]
+            top_importance = importance[top_indices]
 
-        # Clinical significance analysis
-        predictions = self.regression_results['predictions']
-        if not predictions:
-            return
-
-        df = self.regression_results['results_df']
-        best_model = df.loc[df['Test_R2'].idxmax(), 'Model']
-
-        if best_model not in predictions:
-            return
-
-        pred_data = predictions[best_model]
-
-        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-        fig.suptitle('Clinical Interpretation Analysis', fontsize=16, fontweight='bold')
-
-        # Clinical significance (errors within acceptable range)
-        errors = np.abs(pred_data['test_pred'] - pred_data['test_true'])
-        clinical_thresholds = [0.5, 1.0, 1.5, 2.0]
-        percentages = [np.mean(errors <= t) * 100 for t in clinical_thresholds]
-
-        axes[0, 0].bar(range(len(clinical_thresholds)), percentages, alpha=0.7)
-        axes[0, 0].set_xlabel('Error Threshold (mmol/L)')
-        axes[0, 0].set_ylabel('Percentage of Predictions (%)')
-        axes[0, 0].set_title('Clinical Acceptance Rate')
-        axes[0, 0].set_xticks(range(len(clinical_thresholds)))
-        axes[0, 0].set_xticklabels([f'≤{t}' for t in clinical_thresholds])
-        axes[0, 0].grid(True, alpha=0.3)
-
-        # Glucose range analysis
-        y_true = pred_data['test_true']
-        y_pred = pred_data['test_pred']
-
-        # Categorize by ADA guidelines
-        def categorize_glucose(values):
-            categories = []
-            for v in values:
-                if v < 7.0:
-                    categories.append('Good Control')
-                elif v < 8.5:
-                    categories.append('Fair Control')
-                else:
-                    categories.append('Poor Control')
-            return categories
-
-        true_categories = categorize_glucose(y_true)
-        pred_categories = categorize_glucose(y_pred)
-
-        # Confusion matrix for clinical categories
-        try:
-            from sklearn.metrics import confusion_matrix
-            cm = confusion_matrix(true_categories, pred_categories,
-                                  labels=['Good Control', 'Fair Control', 'Poor Control'])
-
-            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=axes[0, 1],
-                        xticklabels=['Good Control', 'Fair Control', 'Poor Control'],
-                        yticklabels=['Good Control', 'Fair Control', 'Poor Control'])
-            axes[0, 1].set_xlabel('Predicted Category')
-            axes[0, 1].set_ylabel('Actual Category')
-            axes[0, 1].set_title('Clinical Category Prediction')
-        except:
-            axes[0, 1].text(0.5, 0.5, 'Category analysis unavailable', ha='center', va='center',
-                            transform=axes[0, 1].transAxes)
-
-        # Error by patient characteristics (placeholder)
-        axes[1, 0].text(0.5, 0.5, 'Patient Subgroup Analysis\n(Requires additional\nclinical metadata)',
-                        ha='center', va='center', transform=axes[1, 0].transAxes,
-                        fontsize=14, style='italic')
-        axes[1, 0].set_title('Error by Patient Subgroups')
-
-        # Clinical decision support
-        decision_ranges = ['Hypoglycemia Risk\n(<4.0)', 'Target Range\n(4.0-7.0)',
-                           'Mild Elevation\n(7.0-10.0)', 'Severe Elevation\n(>10.0)']
-
-        pred_counts = [
-            np.sum(y_pred < 4.0),
-            np.sum((y_pred >= 4.0) & (y_pred < 7.0)),
-            np.sum((y_pred >= 7.0) & (y_pred < 10.0)),
-            np.sum(y_pred >= 10.0)
-        ]
-
-        # Only plot if we have non-zero counts
-        if sum(pred_counts) > 0:
-            axes[1, 1].pie(pred_counts, labels=decision_ranges, autopct='%1.1f%%')
-            axes[1, 1].set_title('Predicted Glucose Distribution\n(Clinical Decision Support)')
-        else:
-            axes[1, 1].text(0.5, 0.5, 'No valid predictions', ha='center', va='center',
-                            transform=axes[1, 1].transAxes)
+            plt.barh(range(len(top_features)), top_importance)
+            plt.yticks(range(len(top_features)),
+                       [f.replace('_', ' ')[:20] + '...' if len(f) > 20 else f.replace('_', ' ')
+                        for f in top_features])
+            plt.xlabel('Importance')
+            plt.title('Top 10 Feature Importance')
 
         plt.tight_layout()
-        plt.savefig(output_dir / 'clinical_interpretation.png', dpi=300, bbox_inches='tight')
+        plt.savefig('advanced_baseline_analysis.png', dpi=300, bbox_inches='tight')
         plt.close()
 
-    def generate_statistical_report(self):
-        """Generate comprehensive statistical analysis report"""
-        print("📈 Generating statistical analysis report...")
+        # 4. Bootstrap Confidence Intervals
+        print("   Computing bootstrap confidence intervals...")
 
-        output_dir = Path("baseline_results")
-        output_dir.mkdir(exist_ok=True)
+        n_bootstrap = 1000
+        bootstrap_r2 = []
+        bootstrap_mae = []
+
+        for _ in range(n_bootstrap):
+            # Bootstrap sample
+            indices = np.random.choice(len(y_true), size=len(y_true), replace=True)
+            y_boot_true = y_true[indices]
+            y_boot_pred = y_pred[indices]
+
+            # Calculate metrics
+            bootstrap_r2.append(r2_score(y_boot_true, y_boot_pred))
+            bootstrap_mae.append(mean_absolute_error(y_boot_true, y_boot_pred))
+
+        r2_ci = np.percentile(bootstrap_r2, [2.5, 97.5])
+        mae_ci = np.percentile(bootstrap_mae, [2.5, 97.5])
+
+        print(f"   Bootstrap Confidence Intervals (95%):")
+        print(f"     R²: {r2_ci[0]:.3f} - {r2_ci[1]:.3f}")
+        print(f"     MAE: {mae_ci[0]:.3f} - {mae_ci[1]:.3f} mmol/L")
+
+        # Store validation results
+        self.validation_results = {
+            'pearson_correlation': (pearson_r, pearson_p),
+            'spearman_correlation': (spearman_r, spearman_p),
+            'clinical_acceptance': {f'within_{t}': np.mean(abs_errors <= t) * 100
+                                    for t in clinical_thresholds},
+            'bootstrap_ci': {'R2': r2_ci, 'MAE': mae_ci},
+            'error_bias_p': normality_p
+        }
+
+        return self.validation_results
+
+    def generate_improvement_report(self):
+        """Generate comprehensive improvement report"""
+        print("📝 Generating improvement report...")
 
         report = []
-        report.append("# COMPREHENSIVE BASELINE ANALYSIS REPORT")
+        report.append("# ADVANCED BASELINE IMPROVEMENT REPORT")
         report.append("=" * 60)
         report.append(f"Generated: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}")
         report.append("")
 
-        # Dataset summary
-        report.append("## DATASET SUMMARY")
+        # Performance Summary
+        report.append("## PERFORMANCE SUMMARY")
         report.append("-" * 30)
-        report.append(f"Total subjects: {len(self.features)}")
-        report.append(f"Total features: {len(self.feature_names)}")
-        report.append(f"Train/Val/Test split: {len(self.X_train)}/{len(self.X_val)}/{len(self.X_test)}")
+        report.append(f"Final Ensemble Performance:")
+        report.append(f"  R² Score: {self.ensemble_performance['R2']:.3f}")
+        report.append(f"  MAE: {self.ensemble_performance['MAE']:.3f} mmol/L")
         report.append("")
 
-        # Regression results
-        if self.regression_results and 'results_df' in self.regression_results:
-            report.append("## REGRESSION RESULTS (Primary Glucose Prediction)")
-            report.append("-" * 30)
-            df_reg = self.regression_results['results_df']
+        # Q1 Publication Assessment
+        r2_score = self.ensemble_performance['R2']
+        mae_score = self.ensemble_performance['MAE']
 
-            if not df_reg.empty:
-                # Best performing models
-                best_r2 = df_reg.loc[df_reg['Test_R2'].idxmax()]
-                best_mae = df_reg.loc[df_reg['Test_MAE'].idxmin()]
-
-                report.append(f"Best R² Score: {best_r2['Model']} (R² = {best_r2['Test_R2']:.3f})")
-                report.append(f"Best MAE: {best_mae['Model']} (MAE = {best_mae['Test_MAE']:.3f} mmol/L)")
-                report.append("")
-
-                # Top 5 models table
-                top_models = df_reg.nlargest(min(5, len(df_reg)), 'Test_R2')[
-                    ['Model', 'Test_R2', 'Test_MAE', 'Test_RMSE', 'CV_MAE']]
-                report.append("### Top 5 Models by Test R²:")
-                report.append(top_models.to_string(index=False))
-                report.append("")
-
-                # Statistical significance testing
-                report.append("### Statistical Analysis:")
-
-                # Get predictions from best two models for comparison
-                if len(df_reg) >= 2 and self.regression_results.get('predictions'):
-                    model1 = df_reg.iloc[0]['Model']
-                    model2 = df_reg.iloc[1]['Model']
-
-                    predictions = self.regression_results['predictions']
-                    if model1 in predictions and model2 in predictions:
-                        pred1 = predictions[model1]['test_pred']
-                        pred2 = predictions[model2]['test_pred']
-                        y_true = predictions[model1]['test_true']
-
-                        err1 = np.abs(pred1 - y_true)
-                        err2 = np.abs(pred2 - y_true)
-
-                        # Paired t-test
-                        try:
-                            stat, p_value = ttest_rel(err1, err2)
-                            report.append(f"Paired t-test between {model1} and {model2}:")
-                            report.append(f"  t-statistic: {stat:.3f}, p-value: {p_value:.3f}")
-
-                            if p_value < 0.05:
-                                better_model = model1 if np.mean(err1) < np.mean(err2) else model2
-                                report.append(f"  Significant difference (p < 0.05): {better_model} performs better")
-                            else:
-                                report.append(f"  No significant difference (p ≥ 0.05)")
-                        except Exception as e:
-                            report.append(f"  Statistical test failed: {e}")
-
-                report.append("")
-
-        # Classification results
-        for target_name, results in self.classification_results.items():
-            if 'results_df' not in results or results['results_df'].empty:
-                continue
-
-            report.append(f"## CLASSIFICATION RESULTS ({target_name.replace('_', ' ').title()})")
-            report.append("-" * 30)
-
-            df_clf = results['results_df']
-
-            # Best performing models
-            if not df_clf['Test_AUC'].isna().all():
-                best_auc = df_clf.loc[df_clf['Test_AUC'].idxmax()]
-                report.append(f"Best AUC: {best_auc['Model']} (AUC = {best_auc['Test_AUC']:.3f})")
-
-            best_acc = df_clf.loc[df_clf['Test_Acc'].idxmax()]
-            report.append(f"Best Accuracy: {best_acc['Model']} (Acc = {best_acc['Test_Acc']:.3f})")
-            report.append("")
-
-            # Top 5 models
-            if not df_clf['Test_AUC'].isna().all():
-                top_models = df_clf.nlargest(min(5, len(df_clf)), 'Test_AUC')[
-                    ['Model', 'Test_Acc', 'Test_F1', 'Test_AUC']]
-            else:
-                top_models = df_clf.nlargest(min(5, len(df_clf)), 'Test_Acc')[['Model', 'Test_Acc', 'Test_F1']]
-
-            report.append("### Top 5 Models:")
-            report.append(top_models.to_string(index=False))
-            report.append("")
-
-        # Clinical interpretation
-        if self.regression_results and 'predictions' in self.regression_results:
-            predictions = self.regression_results['predictions']
-            if predictions:
-                report.append("## CLINICAL INTERPRETATION")
-                report.append("-" * 30)
-
-                # Best regression model for clinical analysis
-                df_reg = self.regression_results['results_df']
-                best_model = df_reg.loc[df_reg['Test_R2'].idxmax(), 'Model']
-
-                if best_model in predictions:
-                    pred_data = predictions[best_model]
-
-                    errors = np.abs(pred_data['test_pred'] - pred_data['test_true'])
-
-                    report.append(f"Analysis based on best performing model: {best_model}")
-                    report.append("")
-                    report.append("Clinical Acceptance Rates:")
-
-                    thresholds = [0.5, 1.0, 1.5, 2.0]
-                    for threshold in thresholds:
-                        rate = np.mean(errors <= threshold) * 100
-                        report.append(f"  Predictions within ±{threshold} mmol/L: {rate:.1f}%")
-
-                    report.append("")
-
-                    # Glucose range analysis
-                    y_true = pred_data['test_true']
-                    report.append("Glucose Range Analysis:")
-                    report.append(f"  Mean actual glucose: {np.mean(y_true):.1f} ± {np.std(y_true):.1f} mmol/L")
-                    report.append(f"  Range: {np.min(y_true):.1f} - {np.max(y_true):.1f} mmol/L")
-
-                    # Clinical categories
-                    good_control = np.sum(y_true < 7.0)
-                    fair_control = np.sum((y_true >= 7.0) & (y_true < 8.5))
-                    poor_control = np.sum(y_true >= 8.5)
-
-                    report.append(
-                        f"  Good control (<7.0 mmol/L): {good_control} subjects ({good_control / len(y_true) * 100:.1f}%)")
-                    report.append(
-                        f"  Fair control (7.0-8.5 mmol/L): {fair_control} subjects ({fair_control / len(y_true) * 100:.1f}%)")
-                    report.append(
-                        f"  Poor control (>8.5 mmol/L): {poor_control} subjects ({poor_control / len(y_true) * 100:.1f}%)")
-
-                    report.append("")
-
-        # Recommendations for Sleep-Aware Transformer
-        report.append("## RECOMMENDATIONS FOR SLEEP-AWARE TRANSFORMER")
+        report.append("## Q1 PUBLICATION READINESS")
         report.append("-" * 30)
 
-        if self.regression_results and 'results_df' in self.regression_results:
-            df_reg = self.regression_results['results_df']
-            if not df_reg.empty:
-                best_mae = df_reg['Test_MAE'].min()
-                best_r2 = df_reg['Test_R2'].max()
+        if r2_score >= 0.6 and mae_score <= 0.8:
+            status = "✅ EXCELLENT - Q1 Ready"
+        elif r2_score >= 0.4 and mae_score <= 1.0:
+            status = "⚠️ GOOD - Conference Ready"
+        elif r2_score >= 0.2 and mae_score <= 1.5:
+            status = "🔧 FAIR - Needs Improvement"
+        else:
+            status = "❌ POOR - Major Revision Needed"
 
-                report.append("Performance Targets to Exceed:")
-                report.append(f"  Target MAE: < {best_mae:.3f} mmol/L")
-                report.append(f"  Target R²: > {best_r2:.3f}")
-                report.append("")
-
-        report.append("Key Findings for Novel Architecture:")
-
-        # Feature importance insights
-        if self.feature_importance:
-            report.append("1. Feature Importance Insights:")
-
-            # Aggregate feature importance across models
-            all_importance = np.zeros(len(self.feature_names))
-            model_count = 0
-
-            for model_name, importance in self.feature_importance.items():
-                if len(importance) == len(self.feature_names):
-                    all_importance += importance
-                    model_count += 1
-
-            if model_count > 0:
-                avg_importance = all_importance / model_count
-                top_features_idx = np.argsort(avg_importance)[-10:]
-
-                report.append("   Top 10 most important features:")
-                for idx in reversed(top_features_idx):
-                    feature_name = self.feature_names[idx] if idx < len(self.feature_names) else f'Feature_{idx}'
-                    importance_val = avg_importance[idx]
-
-                    # Categorize feature
-                    if 'ecg_' in feature_name.lower():
-                        category = "ECG"
-                    elif 'hrv_' in feature_name.lower():
-                        category = "HRV"
-                    elif 'sleep' in feature_name.lower():
-                        category = "Sleep"
-                    else:
-                        category = "Clinical"
-
-                    report.append(f"     {feature_name} ({category}): {importance_val:.3f}")
-
-        report.append("")
-        report.append("2. Architecture Recommendations:")
-        report.append("   - Focus attention mechanisms on high-importance feature categories")
-        report.append("   - Implement sleep-stage-specific processing for HRV features")
-        report.append("   - Use hierarchical attention for multi-scale ECG analysis")
-        report.append("   - Include clinical features as contextual information")
+        report.append(f"Publication Readiness: {status}")
         report.append("")
 
-        report.append("3. Expected Performance Improvements:")
-        report.append("   - Sleep-aware processing should improve HRV feature utilization")
-        report.append("   - Multi-modal attention should enhance clinical interpretation")
-        report.append("   - Hierarchical architecture should capture temporal patterns better")
+        # Individual Model Performance
+        report.append("## INDIVIDUAL MODEL PERFORMANCE")
+        report.append("-" * 30)
+        for model_name, scores in self.cv_scores.items():
+            report.append(f"{model_name}:")
+            report.append(f"  R²: {scores['CV_R2_full']:.3f}")
+            report.append(f"  MAE: {scores['CV_MAE']:.3f} mmol/L")
         report.append("")
+
+        # Statistical Analysis
+        if hasattr(self, 'validation_results'):
+            report.append("## STATISTICAL VALIDATION")
+            report.append("-" * 30)
+
+            pearson_r, pearson_p = self.validation_results['pearson_correlation']
+            report.append(f"Pearson Correlation: r={pearson_r:.3f}, p={pearson_p:.3f}")
+
+            r2_ci = self.validation_results['bootstrap_ci']['R2']
+            mae_ci = self.validation_results['bootstrap_ci']['MAE']
+            report.append(f"Bootstrap 95% CI:")
+            report.append(f"  R²: {r2_ci[0]:.3f} - {r2_ci[1]:.3f}")
+            report.append(f"  MAE: {mae_ci[0]:.3f} - {mae_ci[1]:.3f} mmol/L")
+            report.append("")
+
+            # Clinical acceptance
+            report.append("Clinical Acceptance Rates:")
+            for threshold, rate in self.validation_results['clinical_acceptance'].items():
+                threshold_val = threshold.split('_')[1]
+                report.append(f"  Within ±{threshold_val} mmol/L: {rate:.1f}%")
+
+        report.append("")
+
+        # Feature Engineering Impact
+        report.append("## FEATURE ENGINEERING IMPACT")
+        report.append("-" * 30)
+        report.append(f"Selected Features: {len(self.selected_features)}")
+        report.append("Key Feature Categories:")
+
+        # Categorize selected features
+        categories = {
+            'Sleep-HRV': [f for f in self.selected_features if 'hrv_' in f],
+            'ECG': [f for f in self.selected_features if 'ecg_' in f],
+            'Clinical': [f for f in self.selected_features if any(term in f for term in
+                                                                  ['age', 'weight', 'height', 'SBP', 'DBP'])],
+            'Sleep Quality': [f for f in self.selected_features if any(term in f for term in
+                                                                       ['psqi_', 'cpc_'])],
+            'Engineered': [f for f in self.selected_features if any(term in f for term in
+                                                                    ['ratio', 'index', 'balance', 'adjusted'])]
+        }
+
+        for category, features in categories.items():
+            if features:
+                report.append(f"  {category}: {len(features)} features")
+
+        report.append("")
+
+        # Recommendations
+        report.append("## RECOMMENDATIONS")
+        report.append("-" * 30)
+
+        if r2_score >= 0.6:
+            report.append("🎯 Ready for Q1 Journal Submission:")
+            report.append("  - Target: Nature Machine Intelligence, Neural Networks")
+            report.append("  - Frame as methodology paper")
+            report.append("  - Emphasize sleep-aware architecture")
+        elif r2_score >= 0.4:
+            report.append("🎯 Ready for Conference Submission:")
+            report.append("  - Target: IEEE EMBC, Computing in Cardiology")
+            report.append("  - Focus on proof-of-concept")
+            report.append("  - Continue improving for journal")
+        else:
+            report.append("🔧 Further Improvements Needed:")
+            report.append("  - Consider additional feature engineering")
+            report.append("  - Explore deep learning approaches")
+            report.append("  - Review data quality issues")
 
         # Save report
+        output_dir = Path("baseline_results")
+        output_dir.mkdir(exist_ok=True)
+
         report_text = "\n".join(report)
-        with open(output_dir / "comprehensive_baseline_report.txt", "w") as f:
+        with open(output_dir / "advanced_baseline_report.txt", "w") as f:
             f.write(report_text)
 
-        print(f"✅ Statistical report saved to: {output_dir / 'comprehensive_baseline_report.txt'}")
+        print(f"✅ Report saved to: {output_dir / 'advanced_baseline_report.txt'}")
 
         return report_text
 
-    def run_complete_analysis(self):
-        """Run the complete baseline analysis pipeline"""
-        print("🚀 STARTING COMPREHENSIVE BASELINE ANALYSIS")
+    def run_complete_improvement(self):
+        """Run complete baseline improvement pipeline"""
+        print("🚀 STARTING COMPLETE BASELINE IMPROVEMENT")
         print("=" * 60)
 
-        # Load data
-        if not self.load_processed_data():
+        # Step 1: Load and analyze data
+        if not self.load_and_analyze_data():
             return False
 
-        # Prepare data matrices
-        feature_cols = self.prepare_data_matrices()
-        if feature_cols is None:
-            return False
+        # Step 2: Advanced feature engineering
+        self.advanced_feature_engineering()
 
-        # Initialize models
-        self.initialize_baseline_models()
+        # Step 3: Intelligent feature selection
+        self.intelligent_feature_selection()
 
-        # Evaluate models
-        regression_success = self.evaluate_regression_models()
-        classification_success = self.evaluate_classification_models()
+        # Step 4: Advanced ensemble modeling
+        final_r2, final_mae = self.advanced_modeling_ensemble()
 
-        if regression_success is None and not classification_success:
-            print("❌ All model evaluations failed")
-            return False
+        # Step 5: Comprehensive validation
+        self.advanced_validation_analysis()
 
-        # Create visualizations
-        self.create_performance_visualizations()
+        # Step 6: Generate report
+        self.generate_improvement_report()
 
-        # Generate statistical report
-        self.generate_statistical_report()
-
-        print("\n🎉 BASELINE ANALYSIS COMPLETED SUCCESSFULLY!")
+        print("\n🎉 BASELINE IMPROVEMENT COMPLETED!")
         print("=" * 60)
-        print("📁 Results saved to: baseline_results/")
-        print("📊 Visualizations: Multiple comprehensive plots created")
-        print("📈 Statistical report: comprehensive_baseline_report.txt")
+        print(f"🏆 Final Performance:")
+        print(f"   R² Score: {final_r2:.3f}")
+        print(f"   MAE: {final_mae:.3f} mmol/L")
         print("")
-        print("🎯 READY FOR SLEEP-AWARE TRANSFORMER DEVELOPMENT!")
-        print("   Performance targets established")
-        print("   Feature importance analyzed")
-        print("   Clinical benchmarks set")
+
+        # Q1 readiness assessment
+        if final_r2 >= 0.6 and final_mae <= 0.8:
+            print("🎯 STATUS: Q1 JOURNAL READY! 🎉")
+            print("   Recommended action: Proceed with Q1 submission")
+        elif final_r2 >= 0.4 and final_mae <= 1.0:
+            print("🎯 STATUS: CONFERENCE READY! 📝")
+            print("   Recommended action: Submit to conference, continue improving")
+        else:
+            print("🎯 STATUS: NEEDS FURTHER IMPROVEMENT 🔧")
+            print("   Recommended action: Explore deep learning approaches")
 
         return True
 
 
-# Main execution
+# Usage example
 if __name__ == "__main__":
-    # Initialize and run comprehensive baseline analysis
-    analyzer = ComprehensiveBaselineAnalysis("processed_data")
+    # Initialize improvement system
+    improver = AdvancedBaselineImprovement("processed_data")
 
-    success = analyzer.run_complete_analysis()
+    # Run complete improvement
+    success = improver.run_complete_improvement()
 
     if success:
-        # Print summary of best results
-        print("\n📊 BEST BASELINE PERFORMANCE SUMMARY:")
+        print("\n📊 NEXT STEPS FOR Q1 PUBLICATION:")
         print("=" * 50)
-
-        # Best regression results
-        if analyzer.regression_results and 'results_df' in analyzer.regression_results:
-            df_reg = analyzer.regression_results['results_df']
-            if not df_reg.empty:
-                best_model = df_reg.loc[df_reg['Test_R2'].idxmax()]
-
-                print(f"🏆 Best Regression Model: {best_model['Model']}")
-                print(f"   Test R²: {best_model['Test_R2']:.3f}")
-                print(f"   Test MAE: {best_model['Test_MAE']:.3f} mmol/L")
-                print(f"   Test RMSE: {best_model['Test_RMSE']:.3f} mmol/L")
-
-        # Best classification results
-        for target_name, results in analyzer.classification_results.items():
-            if 'results_df' not in results or results['results_df'].empty:
-                continue
-
-            df_clf = results['results_df']
-
-            if not df_clf['Test_AUC'].isna().all():
-                best_clf = df_clf.loc[df_clf['Test_AUC'].idxmax()]
-                print(f"\n🏆 Best {target_name.replace('_', ' ').title()} Model: {best_clf['Model']}")
-                print(f"   Test AUC: {best_clf['Test_AUC']:.3f}")
-                print(f"   Test Accuracy: {best_clf['Test_Acc']:.3f}")
-                print(f"   Test F1: {best_clf['Test_F1']:.3f}")
-            else:
-                best_clf = df_clf.loc[df_clf['Test_Acc'].idxmax()]
-                print(f"\n🏆 Best {target_name.replace('_', ' ').title()} Model: {best_clf['Model']}")
-                print(f"   Test Accuracy: {best_clf['Test_Acc']:.3f}")
-                print(f"   Test F1: {best_clf['Test_F1']:.3f}")
-
-        if analyzer.regression_results and 'results_df' in analyzer.regression_results:
-            df_reg = analyzer.regression_results['results_df']
-            if not df_reg.empty:
-                best_model = df_reg.loc[df_reg['Test_R2'].idxmax()]
-                print(f"\n🎯 TARGETS FOR SLEEP-AWARE TRANSFORMER:")
-                print(f"   Beat Regression R²: > {best_model['Test_R2']:.3f}")
-                print(f"   Beat Regression MAE: < {best_model['Test_MAE']:.3f} mmol/L")
-                print(f"   Demonstrate superiority through statistical testing")
-                print(f"   Provide clinical interpretability through attention mechanisms")
-
-    else:
-        print("❌ Baseline analysis failed. Please check error messages above.")
+        print("1. Review advanced_baseline_report.txt")
+        print("2. Analyze feature importance patterns")
+        print("3. If R² > 0.6: Proceed with transformer architecture")
+        print("4. If R² < 0.6: Consider deep learning approaches")
+        print("5. Prepare manuscript focusing on methodology")
