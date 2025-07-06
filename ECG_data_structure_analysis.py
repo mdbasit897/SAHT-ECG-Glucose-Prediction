@@ -2,7 +2,7 @@ import scipy.io
 import numpy as np
 
 # Check a sample ECG file
-sample_ecg = scipy.io.loadmat('Dataset_on_electrocardiograph/Dataset on electrocardiograph, sleep and metabolic function of male type 2 diabetes mellitus/ECG/19070921.mat')
+sample_ecg = scipy.io.loadmat('Dataset_on_electrocardiograph/dataset_ecg/ECG/19070921.mat')
 print("ECG file structure:")
 for key in sample_ecg.keys():
     if not key.startswith('__'):

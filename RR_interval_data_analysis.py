@@ -2,7 +2,7 @@ import scipy.io
 import numpy as np
 
 # Check RR-interval structure
-sample_rr = scipy.io.loadmat('Dataset_on_electrocardiograph/Dataset on electrocardiograph, sleep and metabolic function of male type 2 diabetes mellitus/RR-interval/19070921.mat')
+sample_rr = scipy.io.loadmat('Dataset_on_electrocardiograph/dataset_ecg/RR_interval/19070921.mat')
 print("RR-interval file structure:")
 for key in sample_rr.keys():
     if not key.startswith('__'):
