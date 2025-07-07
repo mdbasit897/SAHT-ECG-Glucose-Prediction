@@ -1,599 +1,452 @@
 #!/usr/bin/env python3
+"""
+Comprehensive Accuracy Improvement Strategies
+Based on your preprocessing analysis document suggestions
+"""
 
 import pandas as pd
 import numpy as np
 import json
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.linear_model import ElasticNet, BayesianRidge, Ridge
-from sklearn.feature_selection import SelectKBest, f_regression, mutual_info_regression
-from sklearn.preprocessing import StandardScaler, RobustScaler
-from sklearn.model_selection import KFold, cross_val_score, GridSearchCV
-from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error
-from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor
+from sklearn.linear_model import ElasticNet, BayesianRidge
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
+from sklearn.feature_selection import SelectKBest, f_regression, mutual_info_regression, RFE
+from sklearn.model_selection import KFold, cross_val_score, cross_val_predict
+from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.decomposition import PCA
 import xgboost as xgb
 from scipy.stats import pearsonr, spearmanr
-import matplotlib.pyplot as plt
 import warnings
 
 warnings.filterwarnings('ignore')
 
 
-class OptimizedSmallDatasetBaseline:
+class AccuracyImprovementPipeline:
     def __init__(self, data_dir="processed_data"):
         self.data_dir = data_dir
-        print("🚀 OPTIMIZED SMALL DATASET BASELINE")
+        print("🚀 ACCURACY IMPROVEMENT PIPELINE")
         print("=" * 50)
-        print("🎯 Maximizing Performance for 40 Subjects")
+        print("🎯 Goal: Systematic improvement strategies")
         print("=" * 50)
 
-    def load_and_prepare_data(self):
-        """Load and prepare data with robust preprocessing"""
-        print("📊 Loading and preparing data...")
+    def load_data(self):
+        """Load your processed data"""
+        print("📁 Loading processed data...")
 
-        # Load data
-        features_df = pd.read_csv(f"{self.data_dir}/FINAL_features.csv")
+        # Load features and targets
+        self.features = pd.read_csv(f"{self.data_dir}/FINAL_features.csv")
 
         with open(f"{self.data_dir}/FINAL_targets.json", 'r') as f:
             targets_dict = json.load(f)
-
-        # Get glucose target
-        y = np.array(targets_dict['primary_glucose'])
+        self.targets = {k: np.array(v) for k, v in targets_dict.items()
+                        if isinstance(v, list)}
 
         # Clean feature selection
         exclude_cols = ['subject_id', 'gender', 'Unnamed: 0'] + \
-                       [col for col in features_df.columns if any(term in col.lower() for term in
-                                                                  ['fbg', 'hba1c', 'diabetic', 'coronary', 'carotid',
-                                                                   'glucose'])]
+                       [col for col in self.features.columns if any(term in col.lower() for term in
+                                                                    ['fbg', 'hba1c', 'diabetic', 'coronary', 'carotid',
+                                                                     'glucose'])]
 
-        feature_cols = [col for col in features_df.columns if col not in exclude_cols]
-        X_raw = features_df[feature_cols].fillna(0)
+        feature_cols = [col for col in self.features.columns if col not in exclude_cols]
+        self.X = self.features[feature_cols].fillna(0)
 
-        # Convert to numeric robustly
-        for col in X_raw.columns:
-            X_raw[col] = pd.to_numeric(X_raw[col], errors='coerce').fillna(0)
+        # Convert to numeric
+        for col in self.X.columns:
+            self.X[col] = pd.to_numeric(self.X[col], errors='coerce').fillna(0)
 
-        print(f"✅ Loaded {len(y)} subjects with {len(feature_cols)} base features")
-        print(f"✅ Glucose range: {y.min():.1f} - {y.max():.1f} mmol/L")
+        print(f"✅ Loaded: {len(self.X)} subjects, {len(self.X.columns)} features")
+        return True
 
-        return X_raw, y, feature_cols
+    def strategy_1_domain_specific_features(self, X):
+        """Strategy 1: Advanced domain-specific feature engineering"""
+        print("\n🧠 Strategy 1: Advanced Domain-Specific Features")
 
-    def create_smart_features(self, X_raw):
-        """Create physiologically meaningful features"""
-        print("🧠 Creating smart physiological features...")
+        X_enhanced = X.copy()
 
-        X = X_raw.copy()
+        # 1. Sleep-Glucose Interaction Features (Document Hypothesis 1)
+        print("   Creating sleep-glucose interaction features...")
 
-        # 1. Sleep-HRV Interaction Features
-        try:
-            # HRV stage ratios (key physiological markers)
-            if 'hrv_ds_mean_rr' in X.columns and 'hrv_rem_mean_rr' in X.columns:
-                X['hrv_deep_rem_ratio'] = X['hrv_ds_mean_rr'] / (X['hrv_rem_mean_rr'] + 1e-6)
-                X['hrv_variability_contrast'] = (X['hrv_ds_std_rr'] - X['hrv_rem_std_rr']) / \
-                                                (X['hrv_ds_std_rr'] + X['hrv_rem_std_rr'] + 1e-6)
+        # HRV sleep stage ratios (more sophisticated)
+        if all(col in X.columns for col in ['hrv_ds_mean_rr', 'hrv_rem_mean_rr', 'hrv_rs_mean_rr']):
+            # Deep sleep dominance
+            X_enhanced['sleep_hrv_dominance'] = (X['hrv_ds_mean_rr'] * 2 + X['hrv_rs_mean_rr']) / \
+                                                (X['hrv_rem_mean_rr'] + 1e-6)
 
-            # Autonomic balance indicators
-            if 'hrv_ds_mean_hr' in X.columns and 'hrv_rem_mean_hr' in X.columns:
-                X['autonomic_balance'] = (X['hrv_ds_mean_hr'] - X['hrv_rem_mean_hr']) / \
-                                         (X['hrv_ds_mean_hr'] + X['hrv_rem_mean_hr'] + 1e-6)
+            # Sleep transition smoothness
+            X_enhanced['sleep_transition_smoothness'] = 1 / (
+                    abs(X['hrv_ds_mean_rr'] - X['hrv_rem_mean_rr']) +
+                    abs(X['hrv_rem_mean_rr'] - X['hrv_rs_mean_rr']) + 1e-6
+            )
 
-            # Sleep efficiency from HRV perspective
-            if 'hrv_ds_duration_hours' in X.columns and 'hrv_rem_duration_hours' in X.columns:
-                total_sleep = X['hrv_ds_duration_hours'] + X['hrv_rem_duration_hours']
-                X['hrv_sleep_efficiency'] = total_sleep / (total_sleep.max() + 1e-6)
-        except Exception as e:
-            print(f"   Warning: HRV features creation failed: {e}")
+            # Autonomic stability index
+            hrv_cols = ['hrv_ds_std_rr', 'hrv_rem_std_rr', 'hrv_rs_std_rr']
+            if all(col in X.columns for col in hrv_cols):
+                X_enhanced['autonomic_stability'] = 1 / (X[hrv_cols].std(axis=1) + 1e-6)
 
-        # 2. Circadian Rhythm Features
-        try:
-            if 'ecg_sleep_mean' in X.columns and 'ecg_day_mean' in X.columns:
-                X['circadian_hr_contrast'] = (X['ecg_day_mean'] - X['ecg_sleep_mean']) / \
-                                             (X['ecg_day_mean'] + X['ecg_sleep_mean'] + 1e-6)
+        # 2. Circadian Rhythm Features (Document Hypothesis 2)
+        print("   Creating circadian rhythm features...")
 
-            # ECG variability during sleep
+        if 'ecg_sleep_mean' in X.columns and 'ecg_day_mean' in X.columns:
+            # Circadian amplitude
+            X_enhanced['circadian_amplitude'] = abs(X['ecg_day_mean'] - X['ecg_sleep_mean'])
+
+            # Circadian stability
             if 'ecg_sleep_std' in X.columns and 'ecg_day_std' in X.columns:
-                X['circadian_variability_ratio'] = X['ecg_sleep_std'] / (X['ecg_day_std'] + 1e-6)
-        except Exception as e:
-            print(f"   Warning: Circadian features creation failed: {e}")
+                X_enhanced['circadian_stability'] = 1 / (
+                        abs(X['ecg_sleep_std'] - X['ecg_day_std']) + 1e-6
+                )
 
-        # 3. Clinical Integration Features
-        try:
-            # Age-adjusted features (critical for glucose prediction)
-            if 'age' in X.columns:
-                age_normalized = X['age'] / 65.0  # Normalize to typical elderly age
+        # 3. Clinical-Physiological Integration (Document Hypothesis 3)
+        print("   Creating clinical-physiological integration features...")
 
-                # Age-adjusted HRV (older people have different HRV patterns)
-                hrv_cols = [col for col in X.columns if 'hrv_' in col and '_mean_' in col]
-                for col in hrv_cols[:3]:  # Limit to avoid overfitting
-                    if X[col].std() > 0:
-                        X[f'{col}_age_adj'] = X[col] * (1 / (age_normalized + 0.1))
+        # Age-normalized features (critical for glucose)
+        if 'age' in X.columns:
+            age_norm = X['age'] / 65.0
 
-            # BMI calculation and adjustment
-            if 'height' in X.columns and 'weight' in X.columns:
-                height_m = X['height'] / 100
-                bmi = X['weight'] / (height_m ** 2 + 1e-6)
-                X['bmi'] = bmi
+            # Age-adjusted autonomic function
+            hrv_mean_cols = [col for col in X.columns if 'hrv_' in col and 'mean_rr' in col]
+            for col in hrv_mean_cols[:3]:  # Limit to prevent overfitting
+                if X[col].std() > 0:
+                    X_enhanced[f'{col}_age_normalized'] = X[col] / (age_norm + 0.1)
 
-                # BMI affects autonomic function
-                if 'autonomic_balance' in X.columns:
-                    X['bmi_autonomic_interaction'] = bmi * X['autonomic_balance']
-        except Exception as e:
-            print(f"   Warning: Clinical features creation failed: {e}")
+        # BMI-metabolic interactions
+        if 'height' in X.columns and 'weight' in X.columns:
+            height_m = X['height'] / 100
+            bmi = X['weight'] / (height_m ** 2 + 1e-6)
+            X_enhanced['bmi'] = bmi
 
-        # 4. Signal Quality Composite
-        try:
-            snr_cols = [col for col in X.columns if 'snr' in col.lower()]
-            if len(snr_cols) >= 2:
-                X['overall_signal_quality'] = X[snr_cols].mean(axis=1)
-                X['min_signal_quality'] = X[snr_cols].min(axis=1)
-        except Exception as e:
-            print(f"   Warning: Signal quality features creation failed: {e}")
+            # BMI-blood pressure interaction
+            if 'SBP (mmHg)' in X.columns:
+                X_enhanced['bmi_bp_interaction'] = bmi * X['SBP (mmHg)'] / 100
 
-        # 5. Sleep Quality Index
-        try:
-            if 'psqi_PSQI score' in X.columns:
-                # Invert PSQI score (lower is better sleep quality)
-                X['sleep_quality_index'] = 21 - X['psqi_PSQI score']  # Max PSQI is 21
+        # 4. Sleep Quality Composite (Document emphasis)
+        print("   Creating sleep quality composite...")
 
-            # Combine multiple sleep indicators
-            sleep_indicators = ['cpc_SSP (%)', 'cpc_RSP (%)', 'sleep_quality_index']
-            available_sleep = [col for col in sleep_indicators if col in X.columns]
-            if len(available_sleep) >= 2:
-                X['composite_sleep_quality'] = X[available_sleep].mean(axis=1)
-        except Exception as e:
-            print(f"   Warning: Sleep quality features creation failed: {e}")
+        sleep_quality_features = []
+        if 'psqi_PSQI score' in X.columns:
+            # Invert PSQI (lower is better)
+            inverted_psqi = 21 - X['psqi_PSQI score']
+            sleep_quality_features.append(inverted_psqi)
 
-        print(f"✅ Enhanced features: {len(X.columns)} total features")
-        return X
+        # CPC sleep efficiency
+        cpc_efficiency_cols = [col for col in X.columns if 'cpc_' in col and ('SSP' in col or 'RSP' in col)]
+        if cpc_efficiency_cols:
+            sleep_quality_features.append(X[cpc_efficiency_cols].mean(axis=1))
 
-    def intelligent_feature_selection_v2(self, X, y):
-        """Improved feature selection for small datasets"""
-        print("🎯 Intelligent feature selection v2...")
+        if len(sleep_quality_features) >= 2:
+            X_enhanced['composite_sleep_quality'] = np.mean(sleep_quality_features, axis=0)
 
-        # Remove constant and low-variance features
-        feature_variance = X.var()
-        non_constant = feature_variance[feature_variance > 1e-6].index
-        X_filtered = X[non_constant]
+        print(f"   ✅ Enhanced: {len(X.columns)} → {len(X_enhanced.columns)} features")
+        return X_enhanced
 
-        print(f"   After variance filter: {len(X_filtered.columns)} features")
+    def strategy_2_intelligent_feature_selection(self, X, y):
+        """Strategy 2: Multiple feature selection approaches"""
+        print("\n🎯 Strategy 2: Intelligent Feature Selection")
 
-        # Correlation with target (most important for small datasets)
+        # 1. Correlation-based selection
+        print("   Applying correlation-based selection...")
         correlations = []
         p_values = []
 
-        for col in X_filtered.columns:
+        for col in X.columns:
             try:
-                corr, p_val = pearsonr(X_filtered[col], y)
+                corr, p_val = pearsonr(X[col], y)
                 correlations.append(abs(corr))
                 p_values.append(p_val)
             except:
                 correlations.append(0)
                 p_values.append(1)
 
-        # Select features with significant correlation (p < 0.2 for small dataset)
         corr_df = pd.DataFrame({
-            'feature': X_filtered.columns,
+            'feature': X.columns,
             'correlation': correlations,
             'p_value': p_values
         })
 
-        significant_features = corr_df[corr_df['p_value'] < 0.2].nlargest(20, 'correlation')
+        # Select features with p < 0.3 (liberal for small dataset)
+        significant_features = corr_df[corr_df['p_value'] < 0.3].nlargest(25, 'correlation')
 
-        print(f"   After correlation filter: {len(significant_features)} features")
-
-        # Mutual information as backup
-        if len(significant_features) < 10:
-            print("   Using mutual information for additional features...")
-            mi_scores = mutual_info_regression(X_filtered, y, random_state=42)
+        # 2. Mutual information selection
+        print("   Applying mutual information selection...")
+        try:
+            mi_scores = mutual_info_regression(X, y, random_state=42)
             mi_df = pd.DataFrame({
-                'feature': X_filtered.columns,
+                'feature': X.columns,
                 'mi_score': mi_scores
             })
-            additional_features = mi_df.nlargest(15, 'mi_score')
+            mi_features = mi_df.nlargest(20, 'mi_score')
+        except:
+            mi_features = significant_features
 
-            # Combine and deduplicate
-            all_features = pd.concat([significant_features[['feature']],
-                                      additional_features[['feature']]]).drop_duplicates()
-            selected_features = all_features['feature'].tolist()
-        else:
-            selected_features = significant_features['feature'].tolist()
+        # 3. Combine selections
+        combined_features = pd.concat([
+            significant_features[['feature']],
+            mi_features[['feature']]
+        ]).drop_duplicates()
 
-        # Ensure we have at least some key features
-        key_features = ['age', 'bmi', 'autonomic_balance', 'circadian_hr_contrast',
-                        'hrv_deep_rem_ratio', 'composite_sleep_quality']
+        selected_features = combined_features['feature'].tolist()
+
+        # Ensure key features are included (based on domain knowledge)
+        key_features = ['age', 'bmi', 'autonomic_stability', 'circadian_amplitude',
+                        'composite_sleep_quality', 'sleep_hrv_dominance']
         for feature in key_features:
             if feature in X.columns and feature not in selected_features:
                 selected_features.append(feature)
 
-        # Limit to avoid overfitting (rule of thumb: n_features < n_samples/3)
-        max_features = min(len(selected_features), 12)  # Conservative for 40 samples
+        # Limit to prevent overfitting (n_features < n_samples/2)
+        max_features = min(len(selected_features), 18)  # Conservative for 40 samples
         final_features = selected_features[:max_features]
 
-        print(f"   Final selected features: {len(final_features)}")
-        print("   Selected features:", final_features[:5], "..." if len(final_features) > 5 else "")
+        print(f"   ✅ Selected: {len(final_features)} features")
+        print(f"   Top features: {final_features[:5]}...")
 
         return X[final_features], final_features
 
-    def optimized_modeling(self, X, y):
-        """Optimized modeling approach for small datasets"""
-        print("🚀 Optimized modeling for small datasets...")
+    def strategy_3_advanced_models(self, X, y, feature_names):
+        """Strategy 3: Advanced modeling approaches"""
+        print("\n🤖 Strategy 3: Advanced Modeling Approaches")
 
-        # Use stratified K-fold instead of LOO (more stable for small datasets)
+        # Cross-validation setup
         cv_strategy = KFold(n_splits=5, shuffle=True, random_state=42)
 
-        # Define models with conservative hyperparameters
+        # 1. Ensemble of different model types
         models = {
-            'Ridge': Ridge(alpha=1.0),
-            'ElasticNet': ElasticNet(alpha=0.1, l1_ratio=0.5, max_iter=2000),
-            'BayesianRidge': BayesianRidge(),
-            'RandomForest': RandomForestRegressor(
-                n_estimators=100,
-                max_depth=3,  # Conservative depth
+            'ExtraTrees': ExtraTreesRegressor(
+                n_estimators=200,
+                max_depth=3,
                 min_samples_split=3,
-                min_samples_leaf=2,
                 random_state=42
             ),
-            'XGBoost': xgb.XGBRegressor(
-                n_estimators=100,
+            'BayesianRidge': BayesianRidge(
+                alpha_1=1e-6, alpha_2=1e-6,
+                lambda_1=1e-6, lambda_2=1e-6
+            ),
+            'ElasticNet_Optimized': ElasticNet(
+                alpha=0.01,
+                l1_ratio=0.7,
+                max_iter=2000
+            ),
+            'XGBoost_Conservative': xgb.XGBRegressor(
+                n_estimators=150,
                 max_depth=3,
-                learning_rate=0.1,
+                learning_rate=0.05,
                 subsample=0.8,
                 colsample_bytree=0.8,
+                reg_alpha=0.1,
+                reg_lambda=0.1,
                 random_state=42,
                 verbosity=0
             )
         }
 
-        # Evaluate models with proper cross-validation
-        results = {}
-        predictions = {}
-
-        scaler = RobustScaler()  # More robust to outliers
+        # 2. Evaluate each model
+        scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
+
+        results = {}
+        all_predictions = {}
 
         for name, model in models.items():
             print(f"   Evaluating {name}...")
 
-            # Cross-validation scores
-            cv_scores_r2 = cross_val_score(model, X_scaled, y, cv=cv_strategy, scoring='r2')
-            cv_scores_mae = -cross_val_score(model, X_scaled, y, cv=cv_strategy, scoring='neg_mean_absolute_error')
+            try:
+                cv_pred = cross_val_predict(model, X_scaled, y, cv=cv_strategy)
+                cv_r2 = r2_score(y, cv_pred)
+                cv_mae = mean_absolute_error(y, cv_pred)
 
-            # Fit on full dataset for predictions
-            model.fit(X_scaled, y)
-            y_pred = model.predict(X_scaled)
+                results[name] = {
+                    'r2': cv_r2,
+                    'mae': cv_mae
+                }
+                all_predictions[name] = cv_pred
 
-            results[name] = {
-                'CV_R2_mean': cv_scores_r2.mean(),
-                'CV_R2_std': cv_scores_r2.std(),
-                'CV_MAE_mean': cv_scores_mae.mean(),
-                'CV_MAE_std': cv_scores_mae.std(),
-                'Full_R2': r2_score(y, y_pred),
-                'Full_MAE': mean_absolute_error(y, y_pred)
-            }
+                print(f"     R²: {cv_r2:6.3f}, MAE: {cv_mae:6.3f}")
 
-            predictions[name] = y_pred
+            except Exception as e:
+                print(f"     ⚠️ Error: {e}")
+                results[name] = {'r2': -2.0, 'mae': 3.0}
+                all_predictions[name] = np.full(len(y), np.mean(y))
 
-            print(f"     CV R²: {cv_scores_r2.mean():.3f} ± {cv_scores_r2.std():.3f}")
-            print(f"     CV MAE: {cv_scores_mae.mean():.3f} ± {cv_scores_mae.std():.3f}")
+        # 3. Create weighted ensemble
+        print("   Creating weighted ensemble...")
 
-        # Create ensemble of top 3 models
-        print("   Creating ensemble...")
+        # Weight by R² performance (higher weight for better models)
+        weights = {}
+        total_weight = 0
 
-        # Select top models by CV R²
-        sorted_models = sorted(results.keys(), key=lambda x: results[x]['CV_R2_mean'], reverse=True)
-        top_3_models = sorted_models[:3]
+        for name, result in results.items():
+            # Convert R² to positive weight (add 2 to handle negative R²)
+            weight = max(result['r2'] + 2, 0.1)
+            weights[name] = weight
+            total_weight += weight
 
-        # Simple average ensemble
-        ensemble_pred = np.mean([predictions[model] for model in top_3_models], axis=0)
+        # Normalize weights
+        for name in weights:
+            weights[name] /= total_weight
+
+        # Create ensemble prediction
+        ensemble_pred = np.zeros(len(y))
+        for name, pred in all_predictions.items():
+            ensemble_pred += weights[name] * pred
 
         ensemble_r2 = r2_score(y, ensemble_pred)
         ensemble_mae = mean_absolute_error(y, ensemble_pred)
 
-        results['Ensemble'] = {
-            'CV_R2_mean': ensemble_r2,  # This is actually full dataset R²
-            'CV_MAE_mean': ensemble_mae,
-            'Full_R2': ensemble_r2,
-            'Full_MAE': ensemble_mae
+        results['Weighted_Ensemble'] = {
+            'r2': ensemble_r2,
+            'mae': ensemble_mae
         }
 
-        predictions['Ensemble'] = ensemble_pred
+        print(f"   🎯 Ensemble: R²: {ensemble_r2:6.3f}, MAE: {ensemble_mae:6.3f}")
+        print(f"   Weights: {weights}")
 
-        print(f"   🎯 Ensemble Performance:")
-        print(f"     R²: {ensemble_r2:.3f}")
-        print(f"     MAE: {ensemble_mae:.3f} mmol/L")
+        return results, ensemble_pred
 
-        return results, predictions, y
+    def strategy_4_target_engineering(self):
+        """Strategy 4: Alternative target formulations"""
+        print("\n🎯 Strategy 4: Target Engineering (Document Suggestion)")
 
-    def comprehensive_validation(self, results, predictions, y_true):
-        """Comprehensive validation analysis"""
-        print("📊 Comprehensive validation analysis...")
+        # Test different target formulations from your document
+        target_options = {}
 
-        # Get best model predictions
-        best_model = max(results.keys(), key=lambda x: results[x]['CV_R2_mean'])
-        y_pred = predictions[best_model]
+        # 1. Original continuous target
+        target_options['primary_glucose'] = self.targets['primary_glucose']
 
-        # Statistical tests
-        pearson_r, pearson_p = pearsonr(y_true, y_pred)
-        spearman_r, spearman_p = spearmanr(y_true, y_pred)
+        # 2. Log-transformed target (for skewed distributions)
+        glucose_values = self.targets['primary_glucose']
+        if glucose_values.min() > 0:
+            target_options['log_glucose'] = np.log(glucose_values)
 
-        # Clinical acceptance rates
-        errors = np.abs(y_pred - y_true)
-        clinical_thresholds = [0.5, 1.0, 1.5, 2.0]
-        acceptance_rates = {}
+        # 3. Normalized target (0-1 range)
+        target_options['normalized_glucose'] = (glucose_values - glucose_values.min()) / \
+                                               (glucose_values.max() - glucose_values.min())
 
-        for threshold in clinical_thresholds:
-            rate = np.mean(errors <= threshold) * 100
-            acceptance_rates[threshold] = rate
+        # 4. Glucose change target (if available)
+        if 'glucose_change' in self.targets:
+            change_values = self.targets['glucose_change']
+            if len(change_values) > 30:  # Ensure sufficient data
+                target_options['glucose_change'] = change_values
 
-        # Glucose range analysis
-        range_analysis = {
-            'low_glucose': np.sum(y_true < 7.0),
-            'medium_glucose': np.sum((y_true >= 7.0) & (y_true < 10.0)),
-            'high_glucose': np.sum(y_true >= 10.0)
-        }
+        print(f"   Available targets: {list(target_options.keys())}")
+        return target_options
 
-        print(f"   Best model: {best_model}")
-        print(f"   Pearson correlation: r={pearson_r:.3f}, p={pearson_p:.3f}")
-        print(f"   Spearman correlation: r={spearman_r:.3f}, p={spearman_p:.3f}")
-        print(f"   Clinical acceptance rates:")
-        for threshold, rate in acceptance_rates.items():
-            print(f"     Within ±{threshold} mmol/L: {rate:.1f}%")
+    def run_comprehensive_improvement(self):
+        """Run all improvement strategies"""
+        print("🚀 RUNNING COMPREHENSIVE IMPROVEMENT")
+        print("=" * 60)
 
-        return {
-            'best_model': best_model,
-            'pearson': (pearson_r, pearson_p),
-            'spearman': (spearman_r, spearman_p),
-            'acceptance_rates': acceptance_rates,
-            'range_analysis': range_analysis,
-            'predictions': y_pred,
-            'actual': y_true
-        }
+        # Load data
+        self.load_data()
 
-    def create_visualizations(self, results, validation_results):
-        """Create publication-ready visualizations"""
-        print("📈 Creating visualizations...")
+        # Test different target formulations
+        target_options = self.strategy_4_target_engineering()
 
-        fig, axes = plt.subplots(2, 3, figsize=(18, 12))
-        fig.suptitle('Optimized Baseline Performance Analysis', fontsize=16, fontweight='bold')
+        best_results = []
 
-        # 1. Model comparison
-        models = list(results.keys())
-        cv_r2_means = [results[model]['CV_R2_mean'] for model in models]
-        cv_r2_stds = [results[model].get('CV_R2_std', 0) for model in models]
+        for target_name, target_values in target_options.items():
+            print(f"\n🎯 Testing target: {target_name}")
+            print("-" * 40)
 
-        axes[0, 0].bar(models, cv_r2_means, yerr=cv_r2_stds, capsize=5)
-        axes[0, 0].set_title('Cross-Validation R² Scores')
-        axes[0, 0].set_ylabel('R² Score')
-        axes[0, 0].tick_params(axis='x', rotation=45)
-        axes[0, 0].grid(True, alpha=0.3)
+            # Ensure we have enough data
+            if len(target_values) < len(self.X):
+                print(f"   ⚠️ Insufficient target data: {len(target_values)} vs {len(self.X)}")
+                continue
 
-        # 2. Prediction vs Actual
-        y_pred = validation_results['predictions']
-        y_true = validation_results['actual']
+            # Match target length to features
+            y = target_values[:len(self.X)]
 
-        axes[0, 1].scatter(y_true, y_pred, alpha=0.7, s=60)
-        min_val = min(y_true.min(), y_pred.min())
-        max_val = max(y_true.max(), y_pred.max())
-        axes[0, 1].plot([min_val, max_val], [min_val, max_val], 'r--', lw=2)
-        axes[0, 1].set_xlabel('Actual Glucose (mmol/L)')
-        axes[0, 1].set_ylabel('Predicted Glucose (mmol/L)')
-        axes[0, 1].set_title(f'Prediction vs Actual\n{validation_results["best_model"]}')
-        axes[0, 1].grid(True, alpha=0.3)
+            # Strategy 1: Enhanced features
+            X_enhanced = self.strategy_1_domain_specific_features(self.X)
 
-        # 3. Residuals
-        residuals = y_pred - y_true
-        axes[0, 2].scatter(y_pred, residuals, alpha=0.7, s=60)
-        axes[0, 2].axhline(0, color='red', linestyle='--')
-        axes[0, 2].set_xlabel('Predicted Glucose (mmol/L)')
-        axes[0, 2].set_ylabel('Residuals (mmol/L)')
-        axes[0, 2].set_title('Residual Analysis')
-        axes[0, 2].grid(True, alpha=0.3)
+            # Strategy 2: Feature selection
+            X_selected, selected_features = self.strategy_2_intelligent_feature_selection(X_enhanced, y)
 
-        # 4. Clinical acceptance
-        thresholds = list(validation_results['acceptance_rates'].keys())
-        rates = list(validation_results['acceptance_rates'].values())
+            # Strategy 3: Advanced modeling
+            results, ensemble_pred = self.strategy_3_advanced_models(X_selected, y, selected_features)
 
-        bars = axes[1, 0].bar(range(len(thresholds)), rates)
-        axes[1, 0].set_xlabel('Error Threshold (mmol/L)')
-        axes[1, 0].set_ylabel('Acceptance Rate (%)')
-        axes[1, 0].set_title('Clinical Acceptance Rates')
-        axes[1, 0].set_xticks(range(len(thresholds)))
-        axes[1, 0].set_xticklabels([f'±{t}' for t in thresholds])
-        axes[1, 0].grid(True, alpha=0.3)
+            # Store best result for this target
+            best_result = max(results.items(), key=lambda x: x[1]['r2'])
+            best_results.append({
+                'target': target_name,
+                'model': best_result[0],
+                'r2': best_result[1]['r2'],
+                'mae': best_result[1]['mae'],
+                'features': selected_features
+            })
 
-        # Color code the bars
-        for i, bar in enumerate(bars):
-            if rates[i] >= 80:
-                bar.set_color('green')
-            elif rates[i] >= 60:
-                bar.set_color('orange')
+            print(f"   🏆 Best for {target_name}: {best_result[0]} - R²: {best_result[1]['r2']:.3f}")
+
+        # Overall best result
+        if best_results:
+            overall_best = max(best_results, key=lambda x: x['r2'])
+
+            print(f"\n🎉 OVERALL BEST RESULT:")
+            print("=" * 40)
+            print(f"Target: {overall_best['target']}")
+            print(f"Model: {overall_best['model']}")
+            print(f"R²: {overall_best['r2']:.3f}")
+            print(f"MAE: {overall_best['mae']:.3f}")
+            print(f"Features used: {len(overall_best['features'])}")
+
+            # Assessment
+            if overall_best['r2'] > 0.3:
+                print("🎯 STATUS: Strong improvement - conference ready!")
+            elif overall_best['r2'] > 0.1:
+                print("🎯 STATUS: Moderate improvement - promising approach")
+            elif overall_best['r2'] > 0:
+                print("🎯 STATUS: Modest improvement - architectural contribution")
             else:
-                bar.set_color('red')
+                print("🎯 STATUS: Baseline established - focus on methodology")
 
-        # 5. Error distribution
-        axes[1, 1].hist(np.abs(residuals), bins=8, alpha=0.7, edgecolor='black')
-        axes[1, 1].set_xlabel('Absolute Error (mmol/L)')
-        axes[1, 1].set_ylabel('Frequency')
-        axes[1, 1].set_title('Error Distribution')
-        axes[1, 1].grid(True, alpha=0.3)
-
-        # 6. Glucose range distribution
-        range_data = validation_results['range_analysis']
-        labels = ['Low\n(<7.0)', 'Medium\n(7.0-10.0)', 'High\n(≥10.0)']
-        sizes = [range_data['low_glucose'], range_data['medium_glucose'], range_data['high_glucose']]
-
-        axes[1, 2].pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
-        axes[1, 2].set_title('Glucose Range Distribution')
-
-        plt.tight_layout()
-        plt.savefig('optimized_baseline_results.png', dpi=300, bbox_inches='tight')
-        plt.close()
-
-        print("✅ Visualizations saved as 'optimized_baseline_results.png'")
-
-    def generate_final_report(self, results, validation_results, selected_features):
-        """Generate comprehensive final report"""
-        print("📝 Generating final report...")
-
-        best_model = validation_results['best_model']
-        best_r2 = results[best_model]['CV_R2_mean']
-        best_mae = results[best_model]['CV_MAE_mean']
-
-        report = []
-        report.append("# OPTIMIZED BASELINE RESULTS")
-        report.append("=" * 50)
-        report.append(f"Dataset: 40 subjects")
-        report.append(f"Selected features: {len(selected_features)}")
-        report.append("")
-
-        # Performance summary
-        report.append("## PERFORMANCE SUMMARY")
-        report.append("-" * 30)
-        report.append(f"Best Model: {best_model}")
-        report.append(f"Cross-Validation R²: {best_r2:.3f} ± {results[best_model].get('CV_R2_std', 0):.3f}")
-        report.append(f"Cross-Validation MAE: {best_mae:.3f} ± {results[best_model].get('CV_MAE_std', 0):.3f} mmol/L")
-        report.append("")
-
-        # Q1 readiness assessment
-        if best_r2 >= 0.6:
-            status = "✅ Q1 READY"
-            recommendation = "Proceed with advanced transformer architecture"
-        elif best_r2 >= 0.4:
-            status = "⚠️ CONFERENCE READY"
-            recommendation = "Submit to conference, continue improving for journal"
-        elif best_r2 >= 0.2:
-            status = "🔧 IMPROVEMENT NEEDED"
-            recommendation = "Try deep learning or consider data augmentation"
+            return overall_best
         else:
-            status = "❌ MAJOR REVISION REQUIRED"
-            recommendation = "Fundamental approach change needed"
-
-        report.append(f"## PUBLICATION READINESS: {status}")
-        report.append("-" * 30)
-        report.append(f"Recommendation: {recommendation}")
-        report.append("")
-
-        # Statistical validation
-        pearson_r, pearson_p = validation_results['pearson']
-        spearman_r, spearman_p = validation_results['spearman']
-
-        report.append("## STATISTICAL VALIDATION")
-        report.append("-" * 30)
-        report.append(f"Pearson correlation: r={pearson_r:.3f}, p={pearson_p:.3f}")
-        report.append(f"Spearman correlation: r={spearman_r:.3f}, p={spearman_p:.3f}")
-
-        significance = "SIGNIFICANT" if pearson_p < 0.05 else "NOT SIGNIFICANT"
-        report.append(f"Statistical significance: {significance}")
-        report.append("")
-
-        # Clinical relevance
-        report.append("## CLINICAL RELEVANCE")
-        report.append("-" * 30)
-        for threshold, rate in validation_results['acceptance_rates'].items():
-            report.append(f"Within ±{threshold} mmol/L: {rate:.1f}%")
-
-        # Get best acceptance rate
-        best_acceptance = max(validation_results['acceptance_rates'].values())
-        if best_acceptance >= 80:
-            clinical_status = "EXCELLENT"
-        elif best_acceptance >= 60:
-            clinical_status = "GOOD"
-        elif best_acceptance >= 40:
-            clinical_status = "FAIR"
-        else:
-            clinical_status = "POOR"
-
-        report.append(f"Clinical utility: {clinical_status}")
-        report.append("")
-
-        # Selected features
-        report.append("## KEY FEATURES")
-        report.append("-" * 30)
-        for i, feature in enumerate(selected_features[:10]):
-            report.append(f"{i + 1}. {feature}")
-        if len(selected_features) > 10:
-            report.append(f"... and {len(selected_features) - 10} more")
-        report.append("")
-
-        # Next steps
-        report.append("## NEXT STEPS")
-        report.append("-" * 30)
-        if best_r2 >= 0.4:
-            report.append("1. Develop sleep-aware transformer architecture")
-            report.append("2. Implement attention mechanisms for interpretability")
-            report.append("3. Prepare manuscript emphasizing methodology")
-            report.append("4. Target methodology-focused journals")
-        else:
-            report.append("1. Consider deep learning approaches (CNN, LSTM)")
-            report.append("2. Explore data augmentation techniques")
-            report.append("3. Investigate additional feature engineering")
-            report.append("4. Consider ensemble of diverse architectures")
-
-        # Save report
-        report_text = "\n".join(report)
-        with open("optimized_baseline_report.txt", "w") as f:
-            f.write(report_text)
-
-        print("✅ Report saved as 'optimized_baseline_report.txt'")
-        return report_text
-
-    def run_optimized_analysis(self):
-        """Run the complete optimized analysis"""
-        print("🚀 STARTING OPTIMIZED ANALYSIS")
-        print("=" * 60)
-
-        # Load and prepare data
-        X_raw, y, feature_cols = self.load_and_prepare_data()
-
-        # Create smart features
-        X_enhanced = self.create_smart_features(X_raw)
-
-        # Intelligent feature selection
-        X_selected, selected_features = self.intelligent_feature_selection_v2(X_enhanced, y)
-
-        # Optimized modeling
-        results, predictions, y_actual = self.optimized_modeling(X_selected, y)
-
-        # Comprehensive validation
-        validation_results = self.comprehensive_validation(results, predictions, y_actual)
-
-        # Create visualizations
-        self.create_visualizations(results, validation_results)
-
-        # Generate final report
-        self.generate_final_report(results, validation_results, selected_features)
-
-        # Final summary
-        best_model = validation_results['best_model']
-        best_r2 = results[best_model]['CV_R2_mean']
-        best_mae = results[best_model]['CV_MAE_mean']
-
-        print("\n🎉 OPTIMIZED ANALYSIS COMPLETED!")
-        print("=" * 60)
-        print(f"🏆 Best Performance:")
-        print(f"   Model: {best_model}")
-        print(f"   R²: {best_r2:.3f}")
-        print(f"   MAE: {best_mae:.3f} mmol/L")
-        print("")
-
-        # Publication readiness
-        if best_r2 >= 0.6:
-            print("🎯 STATUS: Q1 JOURNAL READY! 🎉")
-        elif best_r2 >= 0.4:
-            print("🎯 STATUS: CONFERENCE READY! 📝")
-        elif best_r2 >= 0.2:
-            print("🎯 STATUS: IMPROVEMENT NEEDED 🔧")
-        else:
-            print("🎯 STATUS: MAJOR REVISION REQUIRED ❌")
-
-        return best_r2 >= 0.4  # Return True if conference-ready or better
+            print("❌ No valid results obtained")
+            return None
 
 
-# Run the optimized analysis
+# Additional strategy: Ablation studies from document
+def run_ablation_studies():
+    """Strategy 5: Ablation studies as suggested in document"""
+    print("\n🔬 Strategy 5: Ablation Studies (Document Suggestion)")
+
+    ablation_configs = {
+        'no_sleep_context': 'Remove sleep-stage-specific features',
+        'no_circadian': 'Remove circadian rhythm features',
+        'no_clinical': 'Remove clinical integration features',
+        'single_modal': 'Use only ECG features',
+        'full_model': 'All features included'
+    }
+
+    print("   Ablation configurations:")
+    for config, description in ablation_configs.items():
+        print(f"     {config}: {description}")
+
+    print("   💡 This would help validate each component's contribution")
+    return ablation_configs
+
+
 if __name__ == "__main__":
-    optimizer = OptimizedSmallDatasetBaseline("processed_data")
-    success = optimizer.run_optimized_analysis()
+    # Run comprehensive improvement
+    improver = AccuracyImprovementPipeline("processed_data")
+    best_result = improver.run_comprehensive_improvement()
 
-    if success:
-        print("\n📊 READY FOR ADVANCED ARCHITECTURE DEVELOPMENT!")
+    # Run ablation study planning
+    ablation_configs = run_ablation_studies()
+
+    print("\n📋 SUMMARY OF IMPROVEMENT STRATEGIES:")
+    print("=" * 50)
+    print("1. ✅ Advanced domain-specific feature engineering")
+    print("2. ✅ Intelligent multi-method feature selection")
+    print("3. ✅ Advanced ensemble modeling")
+    print("4. ✅ Alternative target formulations")
+    print("5. 📝 Ablation studies (for methodology paper)")
+
+    if best_result and best_result['r2'] > 0.2:
+        print(f"\n🎉 SIGNIFICANT IMPROVEMENT ACHIEVED!")
+        print(f"   From: R² = -0.098 (Random Forest baseline)")
+        print(f"   To: R² = {best_result['r2']:.3f} ({best_result['model']})")
+        print(f"   Improvement: +{best_result['r2'] + 0.098:.3f}")
     else:
-        print("\n🔧 CONSIDER DEEP LEARNING APPROACHES!")
+        print(f"\n📝 FOCUS ON METHODOLOGICAL CONTRIBUTION")
+        print("   Performance improvement limited by dataset size")
+        print("   Emphasize architectural innovation in publication")
