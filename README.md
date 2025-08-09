@@ -39,9 +39,7 @@ This repo expects overnight ECG + sleep staging + clinical glucose for 43 adult 
 - **HRV features (per stage)**: Time-domain metrics — Mean RR, RMSSD, SDNN, pNN50, range.
 
 - **Age normalization**:
-  $$
-  \text{HRV}_{\text{age-norm}} = \frac{\text{HRV}_{\text{raw}}}{\frac{\text{age}}{65} + \epsilon}, \quad \epsilon = 0.1
-  $$
+  $$\text{HRV}_{\text{age-norm}} = \frac{\text{HRV}_{\text{raw}}}{\frac{\text{age}}{65} + \epsilon}, \quad \epsilon = 0.1$$
   Applied to Mean RR in REM, DS, and RS stages.
 
 - **Target engineering**: Natural log of glucose in mmol/L (ensure units are mmol/L before log-transform).
