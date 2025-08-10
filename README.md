@@ -28,7 +28,7 @@ This repository contains code and resources for a pilot, sleep-aware machine lea
 = Single-lead ECG compatibility; preliminary tolerance analysis suggests practical signal value (research only).
 
 ## Dataset
-This repo expects overnight ECG + sleep staging + clinical glucose for 43 adult subjects. In the paper we used publicly available data "Dataset on electrocardiograph, sleep and metabolic function of male type 2 diabetes mellitus"[[1]](#1) from [Mendeley Data](https://data.mendeley.com/datasets/9c47vwvtss/4):
+This repo expects overnight ECG + sleep staging + clinical glucose for 43 adult subjects. In the paper we used publicly available data "Dataset on electrocardiograph, sleep and metabolic function of male type 2 diabetes mellitus"[[1]](#1) from [Mendeley Data](https://data.mendeley.com/datasets/9c47vwvtss/4)
 
 ## Method (in brief)
 
