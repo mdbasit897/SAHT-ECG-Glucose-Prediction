@@ -1,0 +1,59 @@
+# ABLATION STUDY REPORT
+==================================================
+## Based on Successful Log Glucose Prediction (R² = 0.161)
+
+## ABLATION RESULTS
+------------------------------
+**Full Model**
+  - R²: 0.166
+  - MAE: 0.183
+  - Features: 15
+  - Description: All features (baseline)
+
+**No Age Normalization**
+  - R²: 0.132
+  - MAE: 0.185
+  - Features: 15
+  - Description: Remove age-normalized HRV features
+
+**No Sleep Hrv**
+  - R²: 0.108
+  - MAE: 0.189
+  - Features: 15
+  - Description: Remove sleep-stage HRV features
+
+**Ecg Only**
+  - R²: 0.075
+  - MAE: 0.184
+  - Features: 15
+  - Description: Only ECG features
+
+**Sleep Only**
+  - R²: -0.015
+  - MAE: 0.203
+  - Features: 15
+  - Description: Only sleep-related features
+
+**Only Age Normalized**
+  - R²: -0.016
+  - MAE: 0.200
+  - Features: 9
+  - Description: Only age-normalized features + demographics
+
+**Clinical Only**
+  - R²: -0.082
+  - MAE: 0.207
+  - Features: 12
+  - Description: Only clinical + demographic features
+
+## KEY INSIGHTS
+------------------------------
+1. **Best Configuration**: full_model (R² = 0.166)
+2. **Age Normalization Impact**: +0.034 R² improvement
+3. **Top Predictive Features**:
+   - hrv_rem_mean_rr_age_normalized: r=0.443
+   - hrv_ds_mean_rr_age_normalized: r=0.438
+   - DBP (mmHg): r=0.437
+   - age: r=0.433
+   - psqi_age: r=0.433
+
