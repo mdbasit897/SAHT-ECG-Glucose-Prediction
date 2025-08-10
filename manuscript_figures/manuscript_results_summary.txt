@@ -1,0 +1,36 @@
+#RESULTS SUMMARY
+============================================================
+## OPTIMAL CONFIGURATION
+Target Formulation: log_glucose
+Best Model: BayesianRidge
+Cross-Validated R²: 0.161
+MAE: 0.182
+
+## MODEL COMPARISON
+------------------------------
+BayesianRidge  : R²= 0.161, MAE= 0.182
+ExtraTrees     : R²= 0.033, MAE= 0.198
+XGBoost        : R²= 0.017, MAE= 0.195
+ElasticNet     : R²=-0.105, MAE= 0.213
+
+## ABLATION STUDY RESULTS
+------------------------------
+Age Normalization Impact: +0.034 R² (+25.6%)
+full_model          : R²= 0.166, Features=15
+no_age_normalization: R²= 0.132, Features=15
+no_sleep_hrv        : R²= 0.108, Features=15
+clinical_only       : R²=-0.027, Features=11
+hrv_only            : R²=-0.067, Features=15
+
+## TOP PREDICTIVE FEATURES
+------------------------------
+hrv_rem_mean_rr_age_normalized | r=0.443 | p=  0.004 **
+hrv_ds_mean_rr_age_normalized  | r=0.438 | p=  0.005 **
+DBP (mmHg)                     | r=0.437 | p=  0.005 **
+age                            | r=0.433 | p=  0.005 **
+psqi_age                       | r=0.433 | p=  0.005 **
+hrv_rs_mean_rr_age_normalized  | r=0.416 | p=  0.008 **
+LDL-C (mmol/L)                 | r=0.379 | p=  0.016 *
+hrv_rem_rmssd                  | r=0.335 | p=  0.035 *
+Hb (g/L)                       | r=0.324 | p=  0.041 *
+hrv_rem_pnn50                  | r=0.322 | p=  0.043 *
