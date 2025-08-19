@@ -16,6 +16,9 @@ Napaam - 784 028, Tezpur, Assam, INDIA
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![DOI](https://img.shields.io/badge/DOI-10.48550/arXiv.2508.11682-blue)](
+https://doi.org/10.48550/arXiv.2508.11682
+)
 
 ## 🔬 Abstract
 
@@ -72,8 +75,19 @@ Using 5-fold cross-validation with `BayesianRidge`:
 
 **If you use this work, please cite our paper:**
 
+[![arXiv](https://img.shields.io/badge/arXiv-2507.19530-b31b1b.svg)](https://arxiv.org/pdf/2508.11682)
 
-
+```bibtex
+@misc{azam2025agenormalizedhrvfeaturesnoninvasive,
+      title={Age-Normalized HRV Features for Non-Invasive Glucose Prediction: A Pilot Sleep-Aware Machine Learning Study}, 
+      author={Md Basit Azam and Sarangthem Ibotombi Singh},
+      year={2025},
+      eprint={2508.11682},
+      archivePrefix={arXiv},
+      primaryClass={eess.SP},
+      url={https://arxiv.org/abs/2508.11682}, 
+}
+```
 
 ## 🤝 Contributing
 We welcome contributions!
