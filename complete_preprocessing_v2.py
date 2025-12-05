@@ -31,7 +31,7 @@ class RevisedDiabetesECGPreprocessor:
         self.processing_metadata = {
             'version': '2.0',
             'processing_date': datetime.now().isoformat(),
-            'reviewer_concerns_addressed': [
+            'concerns_addressed': [
                 'Separated HbA1c and FBG targets',
                 'LOSO cross-validation',
                 'Temporal validation splits',
@@ -773,7 +773,7 @@ class RevisedDiabetesECGPreprocessor:
         return features_df
 
     # =========================================================================
-    # VALIDATION SPLITS (Addresses Reviewer 2.5b, 4)
+    # VALIDATION SPLITS
     # =========================================================================
 
     def create_loso_splits(self) -> Dict:
@@ -783,7 +783,6 @@ class RevisedDiabetesECGPreprocessor:
         CRITICAL for physiological data:
         - Prevents data leakage between subjects
         - Each subject's data is completely held out for testing
-        - Addresses Reviewer 2.5b and Reviewer 4 concerns
         """
         print(" Creating LOSO Cross-Validation Splits...")
 
@@ -1056,7 +1055,7 @@ class RevisedDiabetesECGPreprocessor:
             'cohort_summary': {},
             'validation_methods': ['LOSO', 'Temporal', '5-Fold CV'],
             'signal_specifications_included': bool(self.signal_specifications),
-            'reviewer_concerns_addressed': self.processing_metadata['reviewer_concerns_addressed']
+            'concerns_addressed': self.processing_metadata['concerns_addressed']
         }
 
         if 'separated_targets' in self.processed_data:
@@ -1139,7 +1138,6 @@ if __name__ == "__main__":
     print()
     print("=" * 70)
     print("REVISED DIABETES ECG PREPROCESSING v2.0")
-    print("Addresses ALL Reviewer Concerns")
     print("=" * 70)
     print()
 

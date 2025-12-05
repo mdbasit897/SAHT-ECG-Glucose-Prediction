@@ -60,7 +60,6 @@ class ComprehensiveBaselineFramework:
 
         print("=" * 70)
         print("COMPREHENSIVE BASELINE FRAMEWORK v2.0")
-        print("Addresses ALL Reviewer Concerns")
         print("=" * 70)
         print()
 
@@ -238,7 +237,7 @@ class ComprehensiveBaselineFramework:
         return X_selected, feature_importance_df, selected_feature_names
 
     # =========================================================================
-    # COMPREHENSIVE BASELINE MODELS (Addresses Reviewer 3)
+    # COMPREHENSIVE BASELINE MODELS
     # =========================================================================
 
     def get_all_baseline_models(self) -> Dict:
@@ -282,7 +281,7 @@ class ComprehensiveBaselineFramework:
             'SVR (Linear)': SVR(kernel='linear', C=1.0),
             'SVR (Poly)': SVR(kernel='poly', degree=2, C=1.0),
 
-            # ===== NEURAL NETWORKS (Critical for Reviewer 3) =====
+            # ===== NEURAL NETWORKS  =====
             'MLP (32)': MLPRegressor(
                 hidden_layer_sizes=(32,),
                 activation='relu',
@@ -418,7 +417,7 @@ class ComprehensiveBaselineFramework:
         return results_df
 
     # =========================================================================
-    # AGE ADJUSTMENT COMPARISON (Addresses Reviewer 3)
+    # AGE ADJUSTMENT COMPARISON
     # =========================================================================
 
     def compare_age_adjustment_methods(self, X: np.ndarray, y: np.ndarray,
@@ -693,7 +692,6 @@ class ComprehensiveBaselineFramework:
         """
         Detailed Leave-One-Subject-Out evaluation with per-fold statistics.
 
-        Addresses Reviewer 2.5b concerns about test independence.
         """
         print(f"\n🔬 Detailed LOSO Evaluation ({model_name})")
         print("=" * 60)
