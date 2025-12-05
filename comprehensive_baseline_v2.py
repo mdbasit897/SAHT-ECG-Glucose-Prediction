@@ -618,7 +618,7 @@ class ComprehensiveBaselineFramework:
 
         Provides uncertainty quantification for small samples.
         """
-        print(f"\n📊 Bootstrap {ci}% Confidence Intervals (n={n_bootstrap})")
+        print(f"\n Bootstrap {ci}% Confidence Intervals (n={n_bootstrap})")
         print("=" * 60)
 
         scaler = StandardScaler()
@@ -1028,7 +1028,7 @@ class ComprehensiveBaselineFramework:
         output_dir = Path(output_dir)
         output_dir.mkdir(exist_ok=True)
 
-        print(f"\n💾 Saving Results to {output_dir}...")
+        print(f"\n Saving Results to {output_dir}...")
 
         for cohort, results in self.results.items():
             cohort_dir = output_dir / cohort
