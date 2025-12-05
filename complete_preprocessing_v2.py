@@ -1,19 +1,4 @@
 #!/usr/bin/env python3
-"""
-REVISED Preprocessing Pipeline for Age-Normalized HRV Glucose Study
-Version 2.0 - Addresses ALL Reviewer Concerns
-
-Key Fixes:
-1. SEPARATED glucose targets (HbA1c vs FBG) - Critical methodological fix
-2. Leave-One-Subject-Out (LOSO) cross-validation
-3. Temporal validation splits
-4. Proper ECG scaling with logging
-5. Comprehensive signal documentation
-6. FDR-corrected feature selection
-
-Author: Md Basit Azam
-Affiliation: Tezpur University
-"""
 
 import os
 import pandas as pd
@@ -29,15 +14,7 @@ warnings.filterwarnings('ignore')
 
 
 class RevisedDiabetesECGPreprocessor:
-    """
-    Comprehensive preprocessing pipeline addressing all reviewer concerns.
 
-    Major changes from v1:
-    - Separate HbA1c and FBG cohorts (Reviewer 1.3, 4.3)
-    - LOSO validation (Reviewer 2.5b, 4)
-    - Temporal validation (Reviewer 4)
-    - Proper signal documentation (Reviewer 4.2)
-    """
 
     def __init__(self, dataset_path: str = "."):
         self.dataset_path = Path(dataset_path)
@@ -64,23 +41,13 @@ class RevisedDiabetesECGPreprocessor:
             ]
         }
 
-        print("=" * 70)
-        print("REVISED DIABETES ECG PREPROCESSOR v2.0")
-        print("Addresses ALL Reviewer Concerns")
-        print("=" * 70)
         print(f"Dataset path: {self.dataset_path.absolute()}")
         print()
 
-    # =========================================================================
-    # SIGNAL DOCUMENTATION (Addresses Reviewer 4.2)
-    # =========================================================================
 
     def document_signal_specifications(self) -> Dict:
-        """
-        Document all signal specifications for reproducibility.
-        Addresses Reviewer 4 concerns about methodology rigor.
-        """
-        print("📋 Documenting Signal Specifications...")
+
+        print(" Documenting Signal Specifications...")
 
         self.signal_specifications = {
             'ecg': {
@@ -154,11 +121,11 @@ class RevisedDiabetesECGPreprocessor:
             }
         }
 
-        print("   ✅ ECG specifications documented")
-        print("   ✅ RR-interval specifications documented")
-        print("   ✅ Glucose measurement specifications documented")
-        print("   ✅ Time synchronization limitations documented")
-        print("   ✅ Population characteristics documented")
+        print("    ECG specifications documented")
+        print("    RR-interval specifications documented")
+        print("    Glucose measurement specifications documented")
+        print("    Time synchronization limitations documented")
+        print("    Population characteristics documented")
 
         return self.signal_specifications
 
@@ -246,7 +213,7 @@ class RevisedDiabetesECGPreprocessor:
         else:
             scaling_log['is_valid'] = False
             scaling_log['warning'] = f"Final range {final_range:.2f} mV outside expected physiological range"
-            print(f"   ⚠️  Subject {subject_id}: {scaling_log['warning']}")
+            print(f"     Subject {subject_id}: {scaling_log['warning']}")
 
         # Store log
         self.ecg_scaling_logs.append(scaling_log)
@@ -262,9 +229,8 @@ class RevisedDiabetesECGPreprocessor:
         print("📋 Loading Clinical Data...")
 
         possible_paths = [
-            self.dataset_path / "Dataset_on_electrocardiograph/dataset_ecg/clinical_indicators.xlsx",
-            self.dataset_path / "clinical_indicators.xlsx",
-            self.dataset_path / "data/clinical_indicators.xlsx"
+            self.dataset_path / "/home/mdbasit_tezu_ernet_in/datasets/electrocardiograph/clinical_indicators.xlsx",
+            self.dataset_path / "clinical_indicators.xlsx"
         ]
 
         clinical_file = None
@@ -310,7 +276,7 @@ class RevisedDiabetesECGPreprocessor:
         print("😴 Loading Objective Sleep Data...")
 
         possible_paths = [
-            self.dataset_path / "Dataset_on_electrocardiograph/dataset_ecg/objective_sleep_quality.xlsx",
+            self.dataset_path / "/home/mdbasit_tezu_ernet_in/datasets/electrocardiograph/objective_sleep_quality.xlsx",
             self.dataset_path / "objective_sleep_quality.xlsx"
         ]
 
@@ -321,7 +287,7 @@ class RevisedDiabetesECGPreprocessor:
                 break
 
         if obj_file is None:
-            print("   ⚠️  Objective sleep quality file not found. Continuing without it.")
+            print("     Objective sleep quality file not found. Continuing without it.")
             return None
 
         raw_obj_sleep = pd.read_excel(obj_file)
@@ -348,15 +314,15 @@ class RevisedDiabetesECGPreprocessor:
         for col in self.objective_sleep.columns[2:]:
             self.objective_sleep[col] = pd.to_numeric(self.objective_sleep[col], errors='coerce')
 
-        print(f"   ✅ Loaded: {self.objective_sleep.shape[0]} subjects, {self.objective_sleep.shape[1]} columns")
+        print(f"  Loaded: {self.objective_sleep.shape[0]} subjects, {self.objective_sleep.shape[1]} columns")
         return self.objective_sleep
 
     def load_subjective_sleep_data(self) -> Optional[pd.DataFrame]:
         """Load subjective sleep quality data (questionnaire-based)."""
-        print("🧠 Loading Subjective Sleep Data...")
+        print(" Loading Subjective Sleep Data...")
 
         possible_paths = [
-            self.dataset_path / "Dataset_on_electrocardiograph/dataset_ecg/subjective_sleep_quality.xlsx",
+            self.dataset_path / "/home/mdbasit_tezu_ernet_in/datasets/electrocardiograph/subjective_sleep_quality.xlsx",
             self.dataset_path / "subjective_sleep_quality.xlsx"
         ]
 
@@ -367,25 +333,25 @@ class RevisedDiabetesECGPreprocessor:
                 break
 
         if subj_file is None:
-            print("   ⚠️  Subjective sleep quality file not found. Continuing without it.")
+            print("    Subjective sleep quality file not found. Continuing without it.")
             return None
 
         self.subjective_sleep = pd.read_excel(subj_file)
         self.subjective_sleep['number'] = self.subjective_sleep['number'].astype(str)
 
-        print(f"   ✅ Loaded: {self.subjective_sleep.shape[0]} subjects, {self.subjective_sleep.shape[1]} columns")
+        print(f"   Loaded: {self.subjective_sleep.shape[0]} subjects, {self.subjective_sleep.shape[1]} columns")
         return self.subjective_sleep
 
     def create_subject_mapping(self) -> Dict:
         """Create comprehensive mapping of available data per subject."""
-        print("🗺️  Creating Subject Mapping...")
+        print("  Creating Subject Mapping...")
 
         # Get subjects from clinical data
         clinical_subjects = set(self.clinical_data['subject_id'])
 
         # Find ECG directory
         possible_ecg_paths = [
-            self.dataset_path / "Dataset_on_electrocardiograph/dataset_ecg/ECG",
+            self.dataset_path / "/home/mdbasit_tezu_ernet_in/datasets/electrocardiograph/ECG",
             self.dataset_path / "ECG"
         ]
 
@@ -399,8 +365,8 @@ class RevisedDiabetesECGPreprocessor:
 
         # Find RR-interval directory
         possible_rr_paths = [
-            self.dataset_path / "Dataset_on_electrocardiograph/dataset_ecg/RR_interval",
-            self.dataset_path / "RR_interval"
+            self.dataset_path / "/home/mdbasit_tezu_ernet_in/datasets/electrocardiograph/rr_interval",
+            self.dataset_path / "rr_interval"
         ]
 
         rr_dir = None
@@ -415,7 +381,7 @@ class RevisedDiabetesECGPreprocessor:
         obj_sleep_subjects = set(self.objective_sleep['number']) if self.objective_sleep is not None else set()
         subj_sleep_subjects = set(self.subjective_sleep['number']) if self.subjective_sleep is not None else set()
 
-        print(f"   📁 Data directories:")
+        print(f"     Data directories:")
         print(f"      ECG: {ecg_dir}")
         print(f"      RR-interval: {rr_dir}")
 
@@ -439,7 +405,7 @@ class RevisedDiabetesECGPreprocessor:
             if info['has_clinical'] and info['has_ecg']
         ]
 
-        print(f"   📊 Subject Summary:")
+        print(f"      Subject Summary:")
         print(f"      Clinical data: {len(clinical_subjects)}")
         print(f"      ECG data: {len(ecg_subjects)}")
         print(f"      RR-interval data: {len(rr_subjects)}")
@@ -447,9 +413,6 @@ class RevisedDiabetesECGPreprocessor:
 
         return self.subjects_mapping
 
-    # =========================================================================
-    # SEPARATED TARGET CREATION (Critical Fix - Addresses Reviewer 1.3, 4.3)
-    # =========================================================================
 
     def create_separated_targets(self) -> Dict:
         """
@@ -463,8 +426,8 @@ class RevisedDiabetesECGPreprocessor:
 
         These MUST be analyzed separately.
         """
-        print("🎯 Creating SEPARATED Target Variables...")
-        print("   ⚠️  CRITICAL: HbA1c and FBG are now analyzed separately")
+        print(" Creating SEPARATED Target Variables...")
+        print("    CRITICAL: HbA1c and FBG are now analyzed separately")
 
         df = self.clinical_data
 
@@ -561,15 +524,15 @@ class RevisedDiabetesECGPreprocessor:
             }
         }
 
-        print(f"   ✅ HbA1c cohort: {targets['hba1c_cohort']['n_subjects']} subjects")
-        print(f"   ✅ FBG cohort: {targets['fbg_cohort']['n_subjects']} subjects")
-        print(f"   ⚠️  Combined (legacy): {targets['combined_legacy']['n_subjects']} subjects")
+        print(f"   HbA1c cohort: {targets['hba1c_cohort']['n_subjects']} subjects")
+        print(f"   FBG cohort: {targets['fbg_cohort']['n_subjects']} subjects")
+        print(f"   Combined (legacy): {targets['combined_legacy']['n_subjects']} subjects")
 
         # Statistics
         if len(hba1c_df) > 0:
-            print(f"   📊 HbA1c stats: {hba1c_df['target_value'].mean():.2f} ± {hba1c_df['target_value'].std():.2f} %")
+            print(f"   HbA1c stats: {hba1c_df['target_value'].mean():.2f} ± {hba1c_df['target_value'].std():.2f} %")
         if len(fbg_df) > 0:
-            print(f"   📊 FBG stats: {fbg_df['target_value'].mean():.2f} ± {fbg_df['target_value'].std():.2f} mmol/L")
+            print(f"    FBG stats: {fbg_df['target_value'].mean():.2f} ± {fbg_df['target_value'].std():.2f} mmol/L")
 
         self.processed_data['separated_targets'] = targets
 
@@ -625,7 +588,7 @@ class RevisedDiabetesECGPreprocessor:
             return features
 
         except Exception as e:
-            print(f"   ❌ Error processing ECG for {subject_id}: {e}")
+            print(f"    Error processing ECG for {subject_id}: {e}")
             return None
 
     def extract_hrv_features(self, subject_id: str) -> Optional[Dict]:
@@ -686,7 +649,7 @@ class RevisedDiabetesECGPreprocessor:
             return features
 
         except Exception as e:
-            print(f"   ❌ Error processing RR-intervals for {subject_id}: {e}")
+            print(f"   Error processing RR-intervals for {subject_id}: {e}")
             return None
 
     def extract_clinical_features(self, subject_id: str) -> Optional[Dict]:
@@ -731,10 +694,10 @@ class RevisedDiabetesECGPreprocessor:
         Where epsilon = 0.1 to prevent division issues with young subjects.
         The reference age of 65 was chosen as a clinically relevant threshold.
         """
-        print("👴 Creating Age-Normalized Features...")
+        print(" Creating Age-Normalized Features...")
 
         if 'age' not in features_df.columns:
-            print("   ⚠️  Age column not found, skipping normalization")
+            print("   Age column not found, skipping normalization")
             return features_df
 
         df = features_df.copy()
@@ -751,7 +714,7 @@ class RevisedDiabetesECGPreprocessor:
                 df[new_col] = df[col] / age_norm_factor
                 normalized_count += 1
 
-        print(f"   ✅ Created {normalized_count} age-normalized features")
+        print(f"   Created {normalized_count} age-normalized features")
 
         return df
 
@@ -761,7 +724,7 @@ class RevisedDiabetesECGPreprocessor:
 
     def process_all_subjects(self) -> pd.DataFrame:
         """Process all subjects and extract features."""
-        print("🔬 Processing All Subjects...")
+        print(" Processing All Subjects...")
 
         # First create targets to get valid subject list
         self.create_separated_targets()
@@ -804,8 +767,8 @@ class RevisedDiabetesECGPreprocessor:
 
         self.processed_data['features'] = features_df
 
-        print(f"   ✅ Processed {len(all_features)} subjects")
-        print(f"   ✅ Total features: {len(features_df.columns)}")
+        print(f"    Processed {len(all_features)} subjects")
+        print(f"    Total features: {len(features_df.columns)}")
 
         return features_df
 
@@ -822,7 +785,7 @@ class RevisedDiabetesECGPreprocessor:
         - Each subject's data is completely held out for testing
         - Addresses Reviewer 2.5b and Reviewer 4 concerns
         """
-        print("🔄 Creating LOSO Cross-Validation Splits...")
+        print(" Creating LOSO Cross-Validation Splits...")
 
         if 'separated_targets' not in self.processed_data:
             raise ValueError("Must create targets first")
@@ -895,7 +858,7 @@ class RevisedDiabetesECGPreprocessor:
 
         This addresses concerns about temporal validation in time-series data.
         """
-        print("⏰ Creating Temporal Validation Splits...")
+        print(" Creating Temporal Validation Splits...")
 
         if 'separated_targets' not in self.processed_data:
             raise ValueError("Must create targets first")
