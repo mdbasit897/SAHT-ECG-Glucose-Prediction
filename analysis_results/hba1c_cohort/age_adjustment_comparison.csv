@@ -1,0 +1,7 @@
+Method,R²,Description
+No Adjustment,-0.6750381579948901,Baseline - no age adjustment
+Your Method (HRV/(age/65+0.1)),-0.6796950437456737,Proposed age normalization
+Residualization,-0.6743373460589581,Regress age out of HRV
+Age-Bin Z-Score,-0.7696919229723618,Z-score within age quartiles
+Polynomial Interaction,-0.687257523933434,Age² + HRV×age interactions
+Simple Division (HRV/age),-0.6828954217645633,Divide HRV by age

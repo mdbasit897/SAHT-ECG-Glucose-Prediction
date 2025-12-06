@@ -1,0 +1,46 @@
+{
+  "processing_metadata": {
+    "version": "2.0",
+    "processing_date": "2025-12-06T07:55:12.033372",
+    "concerns_addressed": [
+      "Separated HbA1c and FBG targets",
+      "LOSO cross-validation",
+      "Temporal validation splits",
+      "ECG scaling validation with logging",
+      "Comprehensive signal documentation",
+      "FDR-corrected feature selection"
+    ]
+  },
+  "dataset_summary": {
+    "total_subjects_processed": 40,
+    "total_features": 116
+  },
+  "cohort_summary": {
+    "hba1c_cohort": {
+      "n_subjects": 29,
+      "description": "HbA1c (%) - 3-month glycemic average"
+    },
+    "fbg_cohort": {
+      "n_subjects": 38,
+      "description": "Fasting Blood Glucose (mmol/L) - acute"
+    },
+    "combined_legacy": {
+      "n_subjects": 40,
+      "description": "LEGACY: Mixed targets (NOT RECOMMENDED)"
+    }
+  },
+  "validation_methods": [
+    "LOSO",
+    "Temporal",
+    "5-Fold CV"
+  ],
+  "signal_specifications_included": true,
+  "concerns_addressed": [
+    "Separated HbA1c and FBG targets",
+    "LOSO cross-validation",
+    "Temporal validation splits",
+    "ECG scaling validation with logging",
+    "Comprehensive signal documentation",
+    "FDR-corrected feature selection"
+  ]
+}
