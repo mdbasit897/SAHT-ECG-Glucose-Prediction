@@ -17,56 +17,215 @@ Napaam - 784 028, Tezpur, Assam, INDIA
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🔬 Abstract
+---
 
-This repository contains code and resources for a pilot, sleep-aware machine learning study on non-invasive glucose prediction using age-normalized heart rate variability (HRV) features derived from single-lead ECG. We analyze sleep-stage–specific HRV (REM/Deep/“Rapid”) and show that simple age normalization of HRV improves regression performance under 5-fold cross-validation on a cohort of 43 subjects.
+## 🚀 Quick Start
 
-**Key Contributions:**
-- Age-normalized HRV improves log-glucose prediction by ~25.6% R² over non-normalized HRV in this pilot.
-- Sleep-stage–specific features matter—REM sleep features rank among the strongest predictors.
-- Lightweight model: scikit-learn BayesianRidge with 5-fold CV; clear, reproducible baseline.
-= Single-lead ECG compatibility; preliminary tolerance analysis suggests practical signal value (research only).
+### 1. Install Dependencies
 
-## Dataset
-This repo expects overnight ECG + sleep staging + clinical glucose for 43 adult subjects. In the paper we used publicly available data "Dataset on electrocardiograph, sleep and metabolic function of male type 2 diabetes mellitus"[[1]](#1) from [Mendeley Data](https://data.mendeley.com/datasets/9c47vwvtss/4):
+```bash
+pip install -r requirements.txt
+```
 
-## Method (in brief)
+### 2. Prepare Your Data
 
-- **ECG → RR intervals**: R-peak detection with artifact handling and outlier filtering.
+Place your dataset in the working directory with this structure:
+```
+./Dataset_on_electrocardiograph/dataset_ecg/
+├── clinical_indicators.xlsx
+├── objective_sleep_quality.xlsx
+├── subjective_sleep_quality.xlsx
+├── ECG/
+│   ├── 20200101.mat
+│   └── ...
+└── RR_interval/
+    ├── 20200101.mat
+    └── ...
+```
 
-- **Sleep stages**: Use provided labels (AASM criteria) to split RR intervals into REM / Deep Sleep (DS) / Rapid Sleep (RS) segments.
+### 3. Run Complete Analysis
 
-- **HRV features (per stage)**: Time-domain metrics — Mean RR, RMSSD, SDNN, pNN50, range.
+```bash
+python run_complete_analysis.py
+```
 
-- **Age normalization**:
-  $$\text{HRV}_{\text{age-norm}} = \frac{\text{HRV}_{\text{raw}}}{\frac{\text{age}}{65} + \epsilon}, \quad \epsilon = 0.1$$
-  Applied to Mean RR in REM, DS, and RS stages.
+Or run individual components:
 
-- **Target engineering**: Natural log of glucose in mmol/L (ensure units are mmol/L before log-transform).
+```bash
+# Step 1: Preprocessing only
+python run_complete_analysis.py --only-preprocessing
 
-- **Feature selection**: Pearson correlation to log-glucose; retain features with *p* < 0.2 and keep top-*k* (e.g., 15) by absolute correlation |r|.
+# Step 2: Baseline comparison only (requires preprocessing)
+python run_complete_analysis.py --skip-preprocessing --only-baselines
 
-- **Model**: scikit-learn `BayesianRidge`; 5-fold cross-validation (random CV on samples).
+# Step 3: Ablation study only
+python run_complete_analysis.py --skip-preprocessing --only-ablation
+```
 
-- **Metrics**: R², MAE, Pearson *r* (with *p*-values), and tolerance (% within ±1.0 / ±1.5 / ±2.0 mmol/L).
+---
 
-## Reproducing Key Results (Pilot)
+##  Output Structure
 
-Using 5-fold cross-validation with `BayesianRidge`:
+After running the complete analysis:
 
-- **R²** ≈ 0.161 (±0.010)  
-- **MAE** ≈ 0.182 mmol/L  
-- **Pearson r** ≈ 0.409 (*p* < 0.001)  
+```
+./
+├── processed_data_v2/
+│   ├── features.csv                 # All extracted features
+│   ├── signal_specifications.json   # ECG/HRV documentation
+│   ├── ecg_scaling_logs.json        # ECG processing logs
+│   ├── targets/
+│   │   ├── hba1c_cohort.csv         # HbA1c targets (SEPARATED)
+│   │   └── fbg_cohort.csv           # FBG targets (SEPARATED)
+│   └── loso_splits/
+│       ├── hba1c_cohort/            # LOSO validation splits
+│       └── fbg_cohort/
+│
+├── analysis_results/
+│   ├── hba1c_cohort/
+│   │   ├── baseline_comparison.csv
+│   │   ├── baseline_comparison.png
+│   │   ├── age_adjustment_comparison.csv
+│   │   ├── age_adjustment_comparison.png
+│   │   ├── prediction_scatter.png
+│   │   └── summary.json
+│   └── fbg_cohort/
+│       └── ...
+│
+├── ablation_results/
+│   ├── hba1c_cohort/
+│   │   ├── ablation_results.csv
+│   │   ├── ablation_figure.png
+│   │   └── key_findings.json
+│   └── fbg_cohort/
+│       └── ...
+│
+├── validation_results/
+    ├── hba1c_cohort/
+    │   ├── validation_report.json
+    │   ├── permutation_test.png
+    │   ├── bootstrap_ci.png
+    │   └── residual_analysis.png
+    └── fbg_cohort/
+        └── ...
 
-### Ablation Study
-- Age normalization improves R² by **~25.6%** compared to non-normalized HRV features.
+```
 
-### Tolerance (Prediction Accuracy)
-- **~68.2%** within ±1.0 mmol/L  
-- **~84.1%** within ±1.5 mmol/L  
-- **~95.3%** within ±2.0 mmol/L  
+---
 
-> ⚠️ **Note**: These are pilot, within-dataset cross-validation results intended for research purposes. They are **not clinical accuracy claims** and should not be interpreted as such.
+## 🔬 Methodology Improvements
+
+### 1. Separated Glucose Targets 
+
+**Previous Issue:** Mixed HbA1c (%) and FBG (mmol/L) as single target variable.
+
+**Solution:**
+- HbA1c cohort: Long-term glycemic control (~3-month average)
+- FBG cohort: Acute glycemic status (instantaneous measurement)
+- Each analyzed independently with appropriate clinical interpretation
+
+### 2. Proper Cross-Validation
+
+**Previous Issue:** Random K-fold CV could leak information between subjects.
+
+**Solution:**
+- **LOSO (Leave-One-Subject-Out):** Complete subject separation
+- **Temporal validation:** Train on earlier subjects, test on later ones
+- **Standard K-fold:** For comparison only
+
+### 3. Comprehensive Baselines 
+
+| Model Category | Models Included |
+|----------------|-----------------|
+| Naive | Mean, Median |
+| Linear | Linear Regression, Ridge, Lasso, ElasticNet, Bayesian Ridge |
+| Tree-based | Random Forest, Gradient Boosting, Extra Trees, AdaBoost |
+| SVM | RBF, Linear, Polynomial kernels |
+| **Neural Networks** | MLP (32), MLP (64,32), MLP (128,64,32) |
+
+### 4. Age Adjustment Comparison 
+
+| Method | Description |
+|--------|-------------|
+| No adjustment | Baseline |
+| Your method | HRV / (age/65 + 0.1) |
+| Residualization | Regress age out of HRV features |
+| Age-Bin Z-Score | Z-score within age quartiles |
+| Polynomial Interaction | Age², HRV×age terms |
+| Simple Division | HRV / age |
+
+### 5. Statistical Validation
+
+- **Permutation Testing:** Verifies results are not due to chance
+- **Bootstrap CI:** 95% confidence intervals for all metrics
+- **CV Stability Analysis:** Tests reproducibility across random splits
+- **Learning Curves:** Sample size recommendations
+
+---
+
+## 📝 Key Files Explained
+
+### `complete_preprocessing.py`
+
+Main preprocessing pipeline:
+- Loads clinical, ECG, and sleep data
+- Extracts HRV features from RR intervals
+- Creates age-normalized features
+- **Separates HbA1c and FBG cohorts**
+- Creates LOSO and temporal validation splits
+- Documents all signal specifications
+
+### `comprehensive_baseline.py`
+
+Baseline model comparison:
+- 20+ models including neural networks
+- LOSO cross-validation
+- Age adjustment method comparison
+- Permutation testing
+- Bootstrap confidence intervals
+- Publication-quality figures
+
+### `ablation_study.py`
+
+Component contribution analysis:
+- Tests each feature category's contribution
+- Compares sleep stages (Deep Sleep, REM, RS)
+- Quantifies age normalization benefit
+- Separate analysis per cohort
+
+### `validation_framework.py`
+
+Statistical validation:
+- Permutation tests (n=1000)
+- Bootstrap CIs (n=1000)
+- CV stability analysis
+- Residual diagnostics
+- Learning curve analysis
+
+---
+
+
+##  Troubleshooting
+
+### Data Not Found
+```
+FileNotFoundError: Clinical indicators file not found
+```
+**Solution:** Ensure dataset is in correct location (see Quick Start section).
+
+### Memory Issues
+```
+MemoryError during neural network training
+```
+**Solution:** Reduce `n_bootstrap` or `n_permutations` parameters.
+
+### Missing Dependencies
+```
+ModuleNotFoundError: No module named 'sklearn'
+```
+**Solution:** Run `pip install -r requirements.txt`
+
+---
 
 ***📚 Citation***
 
@@ -80,7 +239,9 @@ We welcome contributions!
 
 ## 📄 License  
 This project uses an MIT License. See the [LICENSE file](LICENSE) for details.  
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE) 
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE). 
+
+This project is for academic research purposes. Please contact the author for commercial use.
 
 ## 🙏 Acknowledgments  
 The authors acknowledge support from the Google Cloud Research Credits program under 
