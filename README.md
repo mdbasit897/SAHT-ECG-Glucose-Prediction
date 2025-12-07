@@ -1,4 +1,4 @@
-# Age-Normalized HRV for Sleep-Aware Glucose Prediction
+# Re-evaluating HRV Biomarkers for Glucose Sensing: The Impact of Age Normalisation and Subject-Independent Validation
 ### Research prototype • Public domain (CC0-1.0) • Not for clinical use
 
 **1<sup>st</sup> Md Basit Azam**<sup></sup>  
