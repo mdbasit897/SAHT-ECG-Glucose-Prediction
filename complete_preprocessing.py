@@ -229,7 +229,7 @@ class RevisedDiabetesECGPreprocessor:
         print("📋 Loading Clinical Data...")
 
         possible_paths = [
-            self.dataset_path / "/home/mdbasit_tezu_ernet_in/datasets/electrocardiograph/clinical_indicators.xlsx",
+            self.dataset_path / "/home/mdbasit_tezu_ernet_in/Datasets/dataset_on_electrocardiograph/clinical_indicators.xlsx",
             self.dataset_path / "clinical_indicators.xlsx"
         ]
 
@@ -276,7 +276,7 @@ class RevisedDiabetesECGPreprocessor:
         print("😴 Loading Objective Sleep Data...")
 
         possible_paths = [
-            self.dataset_path / "/home/mdbasit_tezu_ernet_in/datasets/electrocardiograph/objective_sleep_quality.xlsx",
+            self.dataset_path / "/home/mdbasit_tezu_ernet_in/Datasets/dataset_on_electrocardiograph/objective_sleep_quality.xlsx",
             self.dataset_path / "objective_sleep_quality.xlsx"
         ]
 
@@ -322,7 +322,7 @@ class RevisedDiabetesECGPreprocessor:
         print(" Loading Subjective Sleep Data...")
 
         possible_paths = [
-            self.dataset_path / "/home/mdbasit_tezu_ernet_in/datasets/electrocardiograph/subjective_sleep_quality.xlsx",
+            self.dataset_path / "/home/mdbasit_tezu_ernet_in/Datasets/dataset_on_electrocardiograph/subjective_sleep_quality.xlsx",
             self.dataset_path / "subjective_sleep_quality.xlsx"
         ]
 
@@ -351,7 +351,7 @@ class RevisedDiabetesECGPreprocessor:
 
         # Find ECG directory
         possible_ecg_paths = [
-            self.dataset_path / "/home/mdbasit_tezu_ernet_in/datasets/electrocardiograph/ECG",
+            self.dataset_path / "/home/mdbasit_tezu_ernet_in/Datasets/dataset_on_electrocardiograph/ECG",
             self.dataset_path / "ECG"
         ]
 
@@ -365,7 +365,7 @@ class RevisedDiabetesECGPreprocessor:
 
         # Find RR-interval directory
         possible_rr_paths = [
-            self.dataset_path / "/home/mdbasit_tezu_ernet_in/datasets/electrocardiograph/rr_interval",
+            self.dataset_path / "/home/mdbasit_tezu_ernet_in/Datasets/dataset_on_electrocardiograph/rr_interval",
             self.dataset_path / "rr_interval"
         ]
 
