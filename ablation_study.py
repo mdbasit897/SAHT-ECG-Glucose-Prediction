@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Revised Ablation Study v3.0
+Revised Ablation Study
 ============================
-CRITICAL FIX: Feature selection (SelectKBest) and standardization (StandardScaler)
+Feature selection (SelectKBest) and standardization (StandardScaler)
 now happen INSIDE each LOSO fold, not on the full dataset.
 
 Addresses:
-  - Reviewer 3 #4: CV hygiene (feature selection within fold)
-  - Reviewer 3 #5: Back-transformed MAE added
-  - Reviewer 3 #6: Neural network language softened in comments
-  - Editor: Cross-validation hygiene
+  - R3 #4: CV hygiene (feature selection within fold)
+  - R3 #5: Back-transformed MAE added
+  - R3 #6: Neural network language softened in comments
+  - E: Cross-validation hygiene
 """
 
 import numpy as np
@@ -48,18 +48,18 @@ class RevisedAblationStudy:
         self.data_dir = Path(data_dir)
         self.results = {}
         print("=" * 70)
-        print("REVISED ABLATION STUDY v3.0")
+        print("REVISED ABLATION STUDY")
         print("CV Hygiene: SelectKBest + StandardScaler INSIDE each LOSO fold")
         print("=" * 70)
 
     def load_data(self, cohort: str = 'hba1c_cohort') -> Tuple:
-        print(f"\n📁 Loading {cohort} data...")
+        print(f"\n Loading {cohort} data...")
         features_df = pd.read_csv(self.data_dir / "features.csv")
         targets_df = pd.read_csv(self.data_dir / "targets" / f"{cohort}.csv")
         cohort_subjects = targets_df['subject_id'].tolist()
         cohort_features = features_df[features_df['subject_id'].isin(cohort_subjects)].copy()
         cohort_features = cohort_features.set_index('subject_id').loc[cohort_subjects].reset_index()
-        print(f"   ✅ Loaded {len(cohort_subjects)} subjects")
+        print(f"    Loaded {len(cohort_subjects)} subjects")
         return cohort_features, targets_df
 
     def categorize_features(self, feature_names: List[str]) -> Dict[str, List[str]]:
@@ -126,7 +126,7 @@ class RevisedAblationStudy:
                                config_features: List[str],
                                max_features: int = 15) -> Dict:
         """
-        CRITICAL FIX: SelectKBest + StandardScaler inside each LOSO fold.
+        SelectKBest + StandardScaler inside each LOSO fold.
         """
         available = [f for f in config_features if f in feature_names]
         if len(available) < 3:
@@ -280,14 +280,14 @@ class RevisedAblationStudy:
             df = data['ablation_results'].drop(columns=['predictions', 'top_features'], errors='ignore')
             df.to_csv(cohort_dir / "ablation_results.csv", index=False)
             self.create_ablation_figure(cohort, str(cohort_dir / "ablation_figure.png"))
-            print(f"   ✅ Saved {cohort}")
+            print(f"    Saved {cohort}")
 
     def run_complete_ablation(self):
         for cohort in ['hba1c_cohort', 'fbg_cohort']:
             try:
                 self.run_ablation_study(cohort)
             except Exception as e:
-                print(f"   ❌ {cohort}: {e}")
+                print(f"    {cohort}: {e}")
         if self.results:
             self.save_results()
         return self.results

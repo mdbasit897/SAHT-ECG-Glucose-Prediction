@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Revised Validation Framework v3.0
+Revised Validation Framework
 ==================================
-CRITICAL FIX: All validation analyses now use sklearn Pipeline to ensure
+FIXED: All validation analyses now use sklearn Pipeline to ensure
 feature selection + scaling happen within each CV fold automatically.
 
 Addresses:
-  - Reviewer 3 #4: CV hygiene
-  - Reviewer 3 #5: Back-transformed error interpretation
-  - Reviewer 3 #7: Bootstrap CIs with proper subject-level resampling
-  - Editor: Methodological details require clearer reporting
+  - R3 #4: CV hygiene
+  - R3 #5: Back-transformed error interpretation
+  - R3 #7: Bootstrap CIs with proper subject-level resampling
+  - E: Methodological details require clearer reporting
 """
 
 import numpy as np
@@ -46,7 +46,7 @@ plt.rcParams.update({
 
 class ValidationFramework:
     """
-    v3.0 — Pipeline-based validation ensuring no data leakage.
+    Pipeline-based validation ensuring no data leakage.
     """
 
     def __init__(self, data_dir: str = "processed_data_v2"):
@@ -94,7 +94,7 @@ class ValidationFramework:
 
     def run_permutation_test(self, X, y, groups, max_features=15,
                              n_permutations=500) -> Dict:
-        print(f"\n🎲 Permutation Test (n={n_permutations})")
+        print(f"\n Permutation Test (n={n_permutations})")
         print("-" * 50)
 
         pipeline = self._get_pipeline(min(max_features, X.shape[1]))
@@ -124,7 +124,7 @@ class ValidationFramework:
         print(f"   True R²:       {score:.4f}")
         print(f"   Perm R² mean:  {perm_mean:.4f} ± {perm_std:.4f}")
         print(f"   P-value:       {p_value:.4f}")
-        print(f"   Significant:   {'✅' if p_value < 0.05 else '❌'}")
+        print(f"   Significant:   {'' if p_value < 0.05 else ''}")
         return results
 
     # =========================================================================
@@ -135,9 +135,9 @@ class ValidationFramework:
                                n_bootstrap=500) -> Dict:
         """
         Subject-level bootstrap with in-fold CV hygiene.
-        Addresses Reviewer 3 #7: wide CIs need proper interpretation.
+        Addresses R3 #7: wide CIs need proper interpretation.
         """
-        print(f"\n📊 Bootstrap 95% CI (n={n_bootstrap}, subject-level)")
+        print(f"\n Bootstrap 95% CI (n={n_bootstrap}, subject-level)")
         print("-" * 50)
 
         unique_groups = np.unique(groups)
@@ -199,7 +199,7 @@ class ValidationFramework:
     # =========================================================================
 
     def analyze_residuals(self, y_true, y_pred) -> Dict:
-        print(f"\n🔍 Residual Analysis")
+        print(f"\n Residual Analysis")
         print("-" * 50)
         residuals = y_pred - y_true
 
@@ -234,7 +234,7 @@ class ValidationFramework:
     # =========================================================================
 
     def analyze_learning_curve(self, X, y, groups=None, max_features=15) -> Dict:
-        print(f"\n📈 Learning Curve Analysis")
+        print(f"\n Learning Curve Analysis")
         print("-" * 50)
 
         pipeline = self._get_pipeline(min(max_features, X.shape[1]))
@@ -373,7 +373,7 @@ class ValidationFramework:
             try:
                 results[cohort] = self.generate_validation_report(cohort, max_features)
             except Exception as e:
-                print(f"   ❌ {cohort}: {e}")
+                print(f"    {cohort}: {e}")
         return results
 
 

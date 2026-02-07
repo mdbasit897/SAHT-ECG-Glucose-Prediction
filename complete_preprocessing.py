@@ -130,7 +130,7 @@ class RevisedDiabetesECGPreprocessor:
         return self.signal_specifications
 
     # =========================================================================
-    # ECG SCALING VALIDATION (Improved with logging)
+    # ECG SCALING VALIDATION - Improved with logging
     # =========================================================================
 
     def validate_ecg_scaling(self, ecg_signal: np.ndarray,
@@ -226,7 +226,7 @@ class RevisedDiabetesECGPreprocessor:
 
     def load_clinical_data(self) -> pd.DataFrame:
         """Load clinical data with comprehensive column documentation."""
-        print("📋 Loading Clinical Data...")
+        print(" Loading Clinical Data...")
 
         possible_paths = [
             self.dataset_path / "/home/mdbasit_tezu_ernet_in/Datasets/dataset_on_electrocardiograph/clinical_indicators.xlsx",
@@ -253,7 +253,7 @@ class RevisedDiabetesECGPreprocessor:
         self.clinical_data['subject_id'] = self.clinical_data['subject_id'].astype(str)
 
         # Document available columns
-        print(f"   ✅ Loaded: {self.clinical_data.shape[0]} subjects, {self.clinical_data.shape[1]} columns")
+        print(f"    Loaded: {self.clinical_data.shape[0]} subjects, {self.clinical_data.shape[1]} columns")
 
         # Analyze glucose data availability
         glucose_cols = {
@@ -262,7 +262,7 @@ class RevisedDiabetesECGPreprocessor:
             'HbA1c (%)': 'Glycated Hemoglobin'
         }
 
-        print("   📊 Glucose Data Availability:")
+        print("    Glucose Data Availability:")
         for col, desc in glucose_cols.items():
             if col in self.clinical_data.columns:
                 available = self.clinical_data[col].notna().sum()
@@ -273,7 +273,7 @@ class RevisedDiabetesECGPreprocessor:
 
     def load_objective_sleep_data(self) -> Optional[pd.DataFrame]:
         """Load objective sleep quality data (PSG-derived)."""
-        print("😴 Loading Objective Sleep Data...")
+        print(" Loading Objective Sleep Data...")
 
         possible_paths = [
             self.dataset_path / "/home/mdbasit_tezu_ernet_in/Datasets/dataset_on_electrocardiograph/objective_sleep_quality.xlsx",
@@ -418,7 +418,7 @@ class RevisedDiabetesECGPreprocessor:
         """
         Create SEPARATE target datasets for HbA1c and FBG cohorts.
 
-        CRITICAL FIX: Previous version mixed HbA1c (%) and FBG (mmol/L) which
+        Previous version mixed HbA1c (%) and FBG (mmol/L) which
         are fundamentally different measurements on different timescales.
 
         - HbA1c: Reflects ~3-month average glycemic control
@@ -928,7 +928,7 @@ class RevisedDiabetesECGPreprocessor:
     def create_kfold_splits(self, n_splits: int = 5) -> Dict:
         """
         Create standard K-Fold splits for comparison.
-        Note: This is for comparison only. LOSO is preferred for physiological data.
+        This is for comparison only. LOSO is preferred for physiological data.
         """
         print(f" Creating {n_splits}-Fold Cross-Validation Splits...")
 
@@ -1078,10 +1078,10 @@ class RevisedDiabetesECGPreprocessor:
     # =========================================================================
 
     def run_complete_pipeline(self) -> Dict:
-        """Run the complete revised preprocessing pipeline."""
+        """Run the complete preprocessing pipeline."""
         print()
         print("=" * 70)
-        print("RUNNING COMPLETE REVISED PIPELINE")
+        print("RUNNING COMPLETE PIPELINE")
         print("=" * 70)
         print()
 
@@ -1137,7 +1137,7 @@ class RevisedDiabetesECGPreprocessor:
 if __name__ == "__main__":
     print()
     print("=" * 70)
-    print("REVISED DIABETES ECG PREPROCESSING v2.0")
+    print("DIABETES ECG PREPROCESSING")
     print("=" * 70)
     print()
 

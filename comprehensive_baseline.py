@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
 """
-Comprehensive Baseline Framework v3.0 (REVISED)
+Comprehensive Baseline Framework
 ================================================
 Revision addressing:
-  - Editor: "Methodological details (ECG preprocessing, artifact removal,
+  - E: "Methodological details (ECG preprocessing, artifact removal,
     cross-validation hygiene) require clearer and more explicit reporting"
-  - Reviewer 3 #4: "Confirm feature selection (top-15 correlations) and z-scoring
+  - R3 #4: "Confirm feature selection (top-15 correlations) and z-scoring
     are done within each LOSO training fold (not on the full dataset)"
-  - Editor: "Neural network failures are likely driven by small sample size and
+  - E: "Neural network failures are likely driven by small sample size and
     limited tuning, but this is overstated as a general limitation"
-  - Reviewer 3 #5: "MAE is on log-transformed targets; add back-transformed interpretation"
-  - Reviewer 3 #6: "Frame neural networks as 'under default settings / as baselines'"
+  - R3 #5: "MAE is on log-transformed targets; add back-transformed interpretation"
+  - R3 #6: "Frame neural networks as 'under default settings / as baselines'"
 
-CRITICAL FIX: Feature selection AND standardization now happen INSIDE each
+FIXED: Feature selection AND standardization now happen INSIDE each
 LOSO fold. In the previous version, both were fitted on the entire dataset
 before splitting, leaking test-subject information into training.
 
 Pattern:
-  OLD (LEAKY):   fit_transform(X_all) → split → predict
-  NEW (CORRECT): split → fit_transform(X_train) → transform(X_test) → predict
+split → fit_transform(X_train) → transform(X_test) → predict
 """
 
 import numpy as np
@@ -71,7 +70,7 @@ plt.rcParams.update({
 
 class ComprehensiveBaselineFramework:
     """
-    v3.0 — All feature selection, scaling, and model fitting occur
+    All feature selection, scaling, and model fitting occur
     strictly within each cross-validation fold to prevent data leakage.
     """
 
@@ -79,7 +78,7 @@ class ComprehensiveBaselineFramework:
         self.data_dir = Path(data_dir)
         self.results = {}
         self.feature_importance = {}
-        self.fold_feature_selections = {}  # NEW: track per-fold feature selection
+        self.fold_feature_selections = {}  # track per-fold feature selection
 
         print("=" * 70)
         print("COMPREHENSIVE BASELINE FRAMEWORK v3.0 (REVISED)")
@@ -88,11 +87,11 @@ class ComprehensiveBaselineFramework:
         print()
 
     # =========================================================================
-    # DATA LOADING (unchanged)
+    # DATA LOADING
     # =========================================================================
 
     def load_cohort_data(self, cohort_name: str = 'hba1c_cohort') -> Tuple:
-        print(f"📁 Loading {cohort_name} data...")
+        print(f" Loading {cohort_name} data...")
         loso_dir = self.data_dir / "loso_splits" / cohort_name
 
         if loso_dir.exists():
@@ -143,9 +142,9 @@ class ComprehensiveBaselineFramework:
         The actual selection inside CV folds uses SelectKBest(f_regression).
 
         This function generates the feature importance table for the paper
-        (Supplementary Table S1) but is NOT used in the evaluation pipeline.
+        but is NOT used in the evaluation pipeline.
         """
-        print("📊 FDR-Corrected Feature Selection (for reporting only)...")
+        print(" FDR-Corrected Feature Selection (for reporting only)...")
         correlations = []
         p_values_raw = []
 
@@ -183,14 +182,14 @@ class ComprehensiveBaselineFramework:
         return feature_importance_df
 
     # =========================================================================
-    # MODELS (unchanged definitions, but note the framing)
+    # MODELS
     # =========================================================================
 
     def get_all_baseline_models(self) -> Dict:
         """
         All models use default/minimal hyperparameters WITHOUT nested tuning.
 
-        NOTE for manuscript (addresses Reviewer 3 #6 and Editor):
+        NOTE for manuscript (addresses R3 #6 and E):
         Neural network results should be described as "under default
         hyperparameters without nested cross-validation tuning" rather than
         as a general statement about neural network unsuitability.
@@ -232,7 +231,7 @@ class ComprehensiveBaselineFramework:
         return models
 
     # =========================================================================
-    # CORE FIX: LOSO with proper in-fold feature selection and scaling
+    # LOSO with proper in-fold feature selection and scaling
     # =========================================================================
 
     def _loso_evaluate(self, X: np.ndarray, y: np.ndarray,
@@ -242,15 +241,14 @@ class ComprehensiveBaselineFramework:
         """
         LOSO evaluation with feature selection and scaling INSIDE each fold.
 
-        This is the CRITICAL methodological fix:
         - Feature selection (SelectKBest) is fitted on training data only
         - StandardScaler is fitted on training data only
         - Test subject is transformed using training-derived parameters
 
         Addresses:
-          Reviewer 3 #4: "confirm feature selection and z-scoring are done
+          R3 #4: "confirm feature selection and z-scoring are done
                          within each LOSO training fold"
-          Editor: "cross-validation hygiene require clearer reporting"
+          E: "cross-validation hygiene require clearer reporting"
         """
         logo = LeaveOneGroupOut()
         predictions = np.zeros(len(y))
@@ -311,7 +309,7 @@ class ComprehensiveBaselineFramework:
 
         All feature selection and scaling now happen inside each LOSO fold.
         """
-        print(f"\n🏃 Running Baseline Comparison (LOSO, in-fold selection+scaling)")
+        print(f"\n Running Baseline Comparison (LOSO, in-fold selection+scaling)")
         print("=" * 60)
         print(f"   Subjects: {len(np.unique(groups))}")
         print(f"   Features (input): {X.shape[1]}")
@@ -347,7 +345,7 @@ class ComprehensiveBaselineFramework:
         valid = results_df[results_df['R²'].notna()]
         if len(valid) > 0:
             best = valid.loc[valid['R²'].idxmax()]
-            print(f"\n   🏆 Best Model: {best['Model']} (R² = {best['R²']:.3f})")
+            print(f"\n    Best Model: {best['Model']} (R² = {best['R²']:.3f})")
 
         return results_df
 
@@ -363,7 +361,7 @@ class ComprehensiveBaselineFramework:
         Age adjustment comparison with proper CV hygiene.
         Each method creates a modified X, then evaluated via _loso_evaluate.
         """
-        print("\n🔄 Comparing Age Adjustment Methods (with in-fold CV hygiene)")
+        print("\n Comparing Age Adjustment Methods (with in-fold CV hygiene)")
         print("=" * 60)
 
         age_idx = None
@@ -373,7 +371,7 @@ class ComprehensiveBaselineFramework:
                 break
 
         if age_idx is None:
-            print("   ⚠️ Age column not found!")
+            print("   ️ Age column not found!")
             return None
 
         age = X[:, age_idx]
@@ -445,12 +443,12 @@ class ComprehensiveBaselineFramework:
 
         results_df = pd.DataFrame(results)
         best = results_df.loc[results_df['R²'].idxmax()]
-        print(f"\n   🏆 Best: {best['Method']} (R² = {best['R²']:.3f})")
+        print(f"\n    Best: {best['Method']} (R² = {best['R²']:.3f})")
         return results_df
 
     # =========================================================================
     # NEW: Age normalization sensitivity analysis
-    # Addresses Reviewer 3 #3: "Give a brief justification + small sensitivity check"
+    # Addresses R3 #3: "Give a brief justification + small sensitivity check"
     # =========================================================================
 
     def age_normalization_sensitivity(self, X: np.ndarray, y: np.ndarray,
@@ -461,11 +459,11 @@ class ComprehensiveBaselineFramework:
         Sensitivity analysis for age normalization parameters.
         Tests different age thresholds and epsilon values.
 
-        Addresses Reviewer 3 #3: "Age normalisation is currently hard to defend
+        Addresses R3 #3: "Age normalisation is currently hard to defend
         (choice of 65 and 0.1). Give a brief justification + a small sensitivity
         check so the negative result is more convincing."
         """
-        print("\n🔬 Age Normalization Sensitivity Analysis")
+        print("\n Age Normalization Sensitivity Analysis")
         print("=" * 60)
         print("   Testing: HRV_norm = HRV / (age/threshold + epsilon)")
 
@@ -530,7 +528,7 @@ class ComprehensiveBaselineFramework:
 
     # =========================================================================
     # NEW: Back-transformed error metrics
-    # Addresses Reviewer 3 #5: "add back-transformed interpretation"
+    # Addresses R3 #5: "add back-transformed interpretation"
     # =========================================================================
 
     def compute_back_transformed_errors(self, y_log: np.ndarray,
@@ -539,7 +537,7 @@ class ComprehensiveBaselineFramework:
         """
         Convert log-scale MAE to original units for clinical interpretation.
 
-        Addresses Reviewer 3 #5: "MAE is on log-transformed targets; add an
+        Addresses R3 #5: "MAE is on log-transformed targets; add an
         intuitive back-transformed interpretation so clinicians can understand
         the error scale."
 
@@ -549,7 +547,7 @@ class ComprehensiveBaselineFramework:
         - For HbA1c ~8.5%, that's ~0.9% absolute
         - For FBG ~9.2 mmol/L, that's ~0.97 mmol/L
         """
-        print("\n📐 Back-Transformed Error Metrics")
+        print("\n Back-Transformed Error Metrics")
         print("-" * 50)
 
         # Log-scale errors
@@ -610,7 +608,6 @@ class ComprehensiveBaselineFramework:
 
     # =========================================================================
     # NEW: Feature selection stability across folds
-    # For Supplementary Table S4: proves CV hygiene
     # =========================================================================
 
     def analyze_feature_selection_stability(self, model_name: str = 'Bayesian Ridge') -> Dict:
@@ -640,7 +637,7 @@ class ComprehensiveBaselineFramework:
             lambda x: 'Stable' if x > 0.8 else ('Moderate' if x > 0.5 else 'Unstable')
         )
 
-        print(f"\n📊 Feature Selection Stability ({model_name}, {n_folds} folds)")
+        print(f"\n Feature Selection Stability ({model_name}, {n_folds} folds)")
         print("-" * 60)
         for _, row in stability_df.head(15).iterrows():
             bar = '█' * int(row['Selection_Rate'] * 20)
@@ -666,7 +663,7 @@ class ComprehensiveBaselineFramework:
         The pipeline wraps SelectKBest + StandardScaler + model so that
         sklearn's permutation_test_score handles the splits correctly.
         """
-        print(f"\n🎲 Permutation Test (n={n_permutations}, with Pipeline)")
+        print(f"\n Permutation Test (n={n_permutations}, with Pipeline)")
         print("=" * 60)
 
         k = min(max_features, X.shape[1])
@@ -706,7 +703,7 @@ class ComprehensiveBaselineFramework:
         print(f"   Permutation R² mean:  {perm_mean:.4f} ± {perm_std:.4f}")
         print(f"   P-value:              {p_value:.4f}")
         print(f"   Effect size (z):      {effect_size:.2f}")
-        print(f"   Significant (p<0.05): {'✅ Yes' if p_value < 0.05 else '❌ No'}")
+        print(f"   Significant (p<0.05): {' Yes' if p_value < 0.05 else ' No'}")
 
         return results
 
@@ -718,7 +715,7 @@ class ComprehensiveBaselineFramework:
         Bootstrap CIs with in-fold CV hygiene via _loso_evaluate.
         Each bootstrap resamples subjects (not individual samples).
         """
-        print(f"\n📊 Bootstrap 95% CI (n={n_bootstrap}, subject-level resampling)")
+        print(f"\n Bootstrap 95% CI (n={n_bootstrap}, subject-level resampling)")
         print("=" * 60)
 
         unique_groups = np.unique(groups)
@@ -778,7 +775,7 @@ class ComprehensiveBaselineFramework:
         return results
 
     # =========================================================================
-    # VISUALISATION (unchanged core, minor additions)
+    # VISUALISATION
     # =========================================================================
 
     def create_baseline_comparison_figure(self, results_df, output_path="baseline_comparison.png"):
@@ -923,7 +920,7 @@ class ComprehensiveBaselineFramework:
     def save_all_results(self, output_dir: str = "analysis_results_v3"):
         output_dir = Path(output_dir)
         output_dir.mkdir(exist_ok=True)
-        print(f"\n💾 Saving Results to {output_dir}...")
+        print(f"\n Saving Results to {output_dir}...")
 
         for cohort, results in self.results.items():
             cohort_dir = output_dir / cohort
@@ -980,9 +977,9 @@ class ComprehensiveBaselineFramework:
             with open(cohort_dir / "summary.json", 'w') as f:
                 json.dump(summary, f, indent=2, default=str)
 
-            print(f"   ✅ Saved {cohort}")
+            print(f"    Saved {cohort}")
 
-        print(f"\n✅ All results saved to {output_dir}")
+        print(f"\n All results saved to {output_dir}")
 
 
 # =============================================================================
@@ -992,8 +989,7 @@ class ComprehensiveBaselineFramework:
 if __name__ == "__main__":
     print()
     print("=" * 70)
-    print("COMPREHENSIVE BASELINE FRAMEWORK v3.0 (REVISED)")
-    print("All reviewer/editor concerns addressed")
+    print("COMPREHENSIVE BASELINE FRAMEWORK")
     print("=" * 70)
 
     framework = ComprehensiveBaselineFramework("processed_data_v2")
@@ -1001,9 +997,9 @@ if __name__ == "__main__":
     for cohort in ['hba1c_cohort', 'fbg_cohort']:
         try:
             results = framework.run_complete_analysis(cohort, use_log_target=True)
-            print(f"\n✅ {cohort} analysis complete!")
+            print(f"\n {cohort} analysis complete!")
         except FileNotFoundError as e:
-            print(f"\n⚠️  {cohort}: {e}")
+            print(f"\n  {cohort}: {e}")
             print("   Run complete_preprocessing.py first")
         except Exception as e:
             print(f"\n {cohort}: {e}")
