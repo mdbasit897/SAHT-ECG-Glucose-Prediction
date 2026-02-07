@@ -1,0 +1,84 @@
+{
+  "cohort": "fbg_cohort",
+  "timestamp": "2026-02-06T16:12:20.840408",
+  "n_samples": 38,
+  "n_features": 94,
+  "n_subjects": 38,
+  "cv_hygiene": "Pipeline(SelectKBest + StandardScaler + BayesianRidge) within each LOSO fold",
+  "permutation_test": {
+    "true_r2": NaN,
+    "permutation_r2_mean": NaN,
+    "permutation_r2_std": NaN,
+    "p_value": 0.001996007984031936,
+    "effect_size_z": 0.0,
+    "n_permutations": 500,
+    "significant_005": true
+  },
+  "bootstrap_analysis": {
+    "n_bootstrap": 500,
+    "n_successful": 500,
+    "metrics": {
+      "r2": {
+        "mean": -22.280399142293362,
+        "median": 0.0489043672770868,
+        "std": 125.63190440924886,
+        "ci_95_lower": -145.05780638196723,
+        "ci_95_upper": 0.5579900166500984
+      },
+      "mae": {
+        "mean": 0.3143633372119786,
+        "ci_95_lower": 0.15159769159519898,
+        "ci_95_upper": 0.928870890482486
+      }
+    }
+  },
+  "residual_analysis": {
+    "mean": -0.1202546371624708,
+    "std": 0.7664777599073356,
+    "skewness": -4.487175920237673,
+    "kurtosis": 22.172910741655958,
+    "shapiro_test": {
+      "statistic": 0.514111340045929,
+      "p_value": 4.761494531990706e-10,
+      "normal": false
+    },
+    "bias_significant": false,
+    "heteroscedasticity": {
+      "correlation": -0.9594630056952151,
+      "p_value": 2.1755002475849163e-21,
+      "significant": true
+    }
+  },
+  "learning_curve": {
+    "train_sizes": [
+      6,
+      12,
+      18,
+      24,
+      30
+    ],
+    "test_scores_mean": [
+      -47.63142041913595,
+      -23.01129405833253,
+      -0.7934931627731968,
+      -1.9465300108955748,
+      -4.261981033116173
+    ],
+    "test_scores_std": [
+      32.11989785404369,
+      38.38384191506223,
+      0.8447204231474292,
+      2.3052307902922555,
+      7.038141823003818
+    ],
+    "recommendation": "Performance appears saturated"
+  },
+  "summary": {
+    "significant": true,
+    "r2_95_ci": [
+      -145.05780638196723,
+      0.5579900166500984
+    ],
+    "residuals_normal": false
+  }
+}

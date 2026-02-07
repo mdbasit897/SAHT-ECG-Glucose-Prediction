@@ -1,0 +1,20 @@
+{
+  "cohort": "hba1c_cohort",
+  "n_samples": 29,
+  "n_features": 94,
+  "cv_hygiene": "Feature selection + scaling within each LOSO fold",
+  "best_model": "Extra Trees",
+  "best_r2": 0.22230142281081489,
+  "permutation_p": 0.001996007984031936,
+  "bootstrap_r2_ci": [
+    -18.297633838603808,
+    0.7176646698556935
+  ],
+  "back_transformed_errors": {
+    "MAE": 1.1796577446004142,
+    "RMSE": 1.4418699680067273,
+    "Median_AE": 1.1534289249094165,
+    "MAPE_percent": 14.626477576140406,
+    "unit": "%"
+  }
+}

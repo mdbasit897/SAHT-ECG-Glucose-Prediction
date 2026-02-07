@@ -1,0 +1,32 @@
+Feature,Folds_Selected,Selection_Rate,Stability
+age,29,1.0,Stable
+DBP (mmHg),29,1.0,Stable
+Hb (g/L),29,1.0,Stable
+ALT (U/L),29,1.0,Stable
+AST/ALT,29,1.0,Stable
+psqi_age,29,1.0,Stable
+GGT (U/L),27,0.9310344827586207,Stable
+psqi_habitual sleep efficiency,27,0.9310344827586207,Stable
+hrv_ds_mean_rr_age_normalized,27,0.9310344827586207,Stable
+psqi_sleep disturbances,26,0.896551724137931,Stable
+hrv_rem_mean_rr_age_normalized,26,0.896551724137931,Stable
+weight,23,0.7931034482758621,Moderate
+psqi_subjective sleep quality,23,0.7931034482758621,Moderate
+hrv_rs_mean_rr_age_normalized,23,0.7931034482758621,Moderate
+TG (mmol/L),22,0.7586206896551724,Moderate
+ecg_day_snr_estimate,10,0.3448275862068966,Unstable
+hrv_ds_rmssd,6,0.20689655172413793,Unstable
+ecg_day_min,5,0.1724137931034483,Unstable
+ecg_sleep_length,2,0.06896551724137931,Unstable
+ecg_sleep_duration_hours,2,0.06896551724137931,Unstable
+psqi_PSQI score,2,0.06896551724137931,Unstable
+UACR (mg/g),1,0.034482758620689655,Unstable
+BUN (mmol/L),1,0.034482758620689655,Unstable
+LDL-C (mmol/L),1,0.034482758620689655,Unstable
+hrv_ds_mean_hr,1,0.034482758620689655,Unstable
+hrv_ds_cv,1,0.034482758620689655,Unstable
+hrv_rs_mean_hr,1,0.034482758620689655,Unstable
+hrv_rem_mean_hr,1,0.034482758620689655,Unstable
+psqi_weight,1,0.034482758620689655,Unstable
+WBC (×109/L),1,0.034482758620689655,Unstable
+height,1,0.034482758620689655,Unstable

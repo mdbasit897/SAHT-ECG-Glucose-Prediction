@@ -1,0 +1,84 @@
+{
+  "cohort": "hba1c_cohort",
+  "timestamp": "2026-02-06T16:10:30.248789",
+  "n_samples": 29,
+  "n_features": 94,
+  "n_subjects": 29,
+  "cv_hygiene": "Pipeline(SelectKBest + StandardScaler + BayesianRidge) within each LOSO fold",
+  "permutation_test": {
+    "true_r2": NaN,
+    "permutation_r2_mean": NaN,
+    "permutation_r2_std": NaN,
+    "p_value": 0.001996007984031936,
+    "effect_size_z": 0.0,
+    "n_permutations": 500,
+    "significant_005": true
+  },
+  "bootstrap_analysis": {
+    "n_bootstrap": 500,
+    "n_successful": 500,
+    "metrics": {
+      "r2": {
+        "mean": -4.029048509343762,
+        "median": 0.11416437507311705,
+        "std": 56.864092851094995,
+        "ci_95_lower": -9.24644738588169,
+        "ci_95_upper": 0.6824288948644593
+      },
+      "mae": {
+        "mean": 0.139115031174568,
+        "ci_95_lower": 0.07405740696158478,
+        "ci_95_upper": 0.245199114324067
+      }
+    }
+  },
+  "residual_analysis": {
+    "mean": -0.008292437761877066,
+    "std": 0.20156919021003658,
+    "skewness": 0.05136563305763922,
+    "kurtosis": -0.664322733780073,
+    "shapiro_test": {
+      "statistic": 0.9862982034683228,
+      "p_value": 0.961401641368866,
+      "normal": true
+    },
+    "bias_significant": false,
+    "heteroscedasticity": {
+      "correlation": -0.17052470271606784,
+      "p_value": 0.3764734007199022,
+      "significant": false
+    }
+  },
+  "learning_curve": {
+    "train_sizes": [
+      4,
+      9,
+      13,
+      18,
+      23
+    ],
+    "test_scores_mean": [
+      -4.902836986655361,
+      -119.60549854154878,
+      -6.206451985557445,
+      -13.122502615262567,
+      -4.8648205860342015
+    ],
+    "test_scores_std": [
+      5.864105353318243,
+      218.64915234768586,
+      8.649766440130104,
+      25.48195863936055,
+      8.701936649515622
+    ],
+    "recommendation": "More data would likely help"
+  },
+  "summary": {
+    "significant": true,
+    "r2_95_ci": [
+      -9.24644738588169,
+      0.6824288948644593
+    ],
+    "residuals_normal": true
+  }
+}
