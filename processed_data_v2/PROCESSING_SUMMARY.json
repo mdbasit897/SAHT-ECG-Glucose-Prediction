@@ -1,7 +1,7 @@
 {
   "processing_metadata": {
     "version": "2.0",
-    "processing_date": "2025-12-06T07:55:12.033372",
+    "processing_date": "2026-02-06T15:56:14.163660",
     "concerns_addressed": [
       "Separated HbA1c and FBG targets",
       "LOSO cross-validation",
@@ -13,7 +13,7 @@
   },
   "dataset_summary": {
     "total_subjects_processed": 40,
-    "total_features": 116
+    "total_features": 105
   },
   "cohort_summary": {
     "hba1c_cohort": {

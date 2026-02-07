@@ -1,5 +1,599 @@
 [
   {
+    "subject_id": "19121735",
+    "original_range": 528293.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 40.30555725097656,
+    "is_valid": false,
+    "warning": "Final range 40.31 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19121735",
+    "original_range": 528293.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 40.30555725097656,
+    "is_valid": false,
+    "warning": "Final range 40.31 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19121735",
+    "original_range": 509542.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 38.874969482421875,
+    "is_valid": false,
+    "warning": "Final range 38.87 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19101607",
+    "original_range": 70185.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 5.3546905517578125,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19101607",
+    "original_range": 70185.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 5.3546905517578125,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19101607",
+    "original_range": 62979.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 4.8049163818359375,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "20010826",
+    "original_range": 154715.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 11.803817749023438,
+    "is_valid": false,
+    "warning": "Final range 11.80 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20010826",
+    "original_range": 131834.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 10.058135986328125,
+    "is_valid": false,
+    "warning": "Final range 10.06 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20010826",
+    "original_range": 154715.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 11.803817749023438,
+    "is_valid": false,
+    "warning": "Final range 11.80 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20121716",
+    "original_range": 234745.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 17.909622192382812,
+    "is_valid": false,
+    "warning": "Final range 17.91 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20121716",
+    "original_range": 95884.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 7.31536865234375,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "20121716",
+    "original_range": 234745.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 17.909622192382812,
+    "is_valid": false,
+    "warning": "Final range 17.91 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20122932",
+    "original_range": 283854.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 21.656341552734375,
+    "is_valid": false,
+    "warning": "Final range 21.66 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20122932",
+    "original_range": 34532.0,
+    "original_unit_guess": "raw_adc_12bit",
+    "corrections": [
+      "adc_12bit_to_mv"
+    ],
+    "final_range": 42.1533203125,
+    "is_valid": false,
+    "warning": "Final range 42.15 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20122932",
+    "original_range": 283854.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 21.656341552734375,
+    "is_valid": false,
+    "warning": "Final range 21.66 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19072205",
+    "original_range": 9021471.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 688.2836151123047,
+    "is_valid": false,
+    "warning": "Final range 688.28 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19072205",
+    "original_range": 2857101.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 217.97950744628906,
+    "is_valid": false,
+    "warning": "Final range 217.98 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19072205",
+    "original_range": 9021471.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 688.2836151123047,
+    "is_valid": false,
+    "warning": "Final range 688.28 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19072940",
+    "original_range": 70281.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 5.3620147705078125,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19072940",
+    "original_range": 26673.0,
+    "original_unit_guess": "raw_adc_12bit",
+    "corrections": [
+      "adc_12bit_to_mv"
+    ],
+    "final_range": 32.559814453125,
+    "is_valid": false,
+    "warning": "Final range 32.56 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19072940",
+    "original_range": 70281.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 5.3620147705078125,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19121303",
+    "original_range": 109754.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 8.373565673828125,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19121303",
+    "original_range": 42269.0,
+    "original_unit_guess": "raw_adc_12bit",
+    "corrections": [
+      "adc_12bit_to_mv"
+    ],
+    "final_range": 51.597900390625,
+    "is_valid": false,
+    "warning": "Final range 51.60 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19121303",
+    "original_range": 109754.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 8.373565673828125,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "20101424",
+    "original_range": 14708459.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 1122.1663665771484,
+    "is_valid": false,
+    "warning": "Final range 1122.17 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20101424",
+    "original_range": 74015.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 5.6468963623046875,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "20101424",
+    "original_range": 14708459.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 1122.1663665771484,
+    "is_valid": false,
+    "warning": "Final range 1122.17 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19080106",
+    "original_range": 52238.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 3.985443115234375,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19080106",
+    "original_range": 47979.0,
+    "original_unit_guess": "raw_adc_12bit",
+    "corrections": [
+      "adc_12bit_to_mv"
+    ],
+    "final_range": 58.568115234375,
+    "is_valid": false,
+    "warning": "Final range 58.57 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19080106",
+    "original_range": 52238.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 3.985443115234375,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19120302",
+    "original_range": 106604.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 8.13323974609375,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19120302",
+    "original_range": 106604.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 8.13323974609375,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19120302",
+    "original_range": 91536.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 6.983642578125,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19090308",
+    "original_range": 89954.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 6.862945556640625,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19090308",
+    "original_range": 52779.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 4.0267181396484375,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19090308",
+    "original_range": 89954.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 6.862945556640625,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19102622",
+    "original_range": 1269041.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 96.82014465332031,
+    "is_valid": false,
+    "warning": "Final range 96.82 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19102622",
+    "original_range": 450761.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 34.39033508300781,
+    "is_valid": false,
+    "warning": "Final range 34.39 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19102622",
+    "original_range": 1269041.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 96.82014465332031,
+    "is_valid": false,
+    "warning": "Final range 96.82 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20121033",
+    "original_range": 60650.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 4.627227783203125,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "20121033",
+    "original_range": 60650.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 4.627227783203125,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "20121033",
+    "original_range": 45283.0,
+    "original_unit_guess": "raw_adc_12bit",
+    "corrections": [
+      "adc_12bit_to_mv"
+    ],
+    "final_range": 55.277099609375,
+    "is_valid": false,
+    "warning": "Final range 55.28 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20092535",
+    "original_range": 31560.0,
+    "original_unit_guess": "raw_adc_12bit",
+    "corrections": [
+      "adc_12bit_to_mv"
+    ],
+    "final_range": 38.525390625,
+    "is_valid": false,
+    "warning": "Final range 38.53 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20092535",
+    "original_range": 18330.0,
+    "original_unit_guess": "raw_adc_12bit",
+    "corrections": [
+      "adc_12bit_to_mv"
+    ],
+    "final_range": 22.37548828125,
+    "is_valid": false,
+    "warning": "Final range 22.38 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20092535",
+    "original_range": 31560.0,
+    "original_unit_guess": "raw_adc_12bit",
+    "corrections": [
+      "adc_12bit_to_mv"
+    ],
+    "final_range": 38.525390625,
+    "is_valid": false,
+    "warning": "Final range 38.53 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19081506",
+    "original_range": 100651.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 7.6790618896484375,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19081506",
+    "original_range": 21870.0,
+    "original_unit_guess": "raw_adc_12bit",
+    "corrections": [
+      "adc_12bit_to_mv"
+    ],
+    "final_range": 26.69677734375,
+    "is_valid": false,
+    "warning": "Final range 26.70 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19081506",
+    "original_range": 100651.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 7.6790618896484375,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19102103",
+    "original_range": 1176318.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 89.74594116210938,
+    "is_valid": false,
+    "warning": "Final range 89.75 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19102103",
+    "original_range": 519924.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 39.66705322265625,
+    "is_valid": false,
+    "warning": "Final range 39.67 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19102103",
+    "original_range": 1176318.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 89.74594116210938,
+    "is_valid": false,
+    "warning": "Final range 89.75 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19090320",
+    "original_range": 75769.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 5.7807159423828125,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19090320",
+    "original_range": 75769.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 5.7807159423828125,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19090320",
+    "original_range": 61790.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 4.714202880859375,
+    "is_valid": true,
+    "warning": null
+  },
+  {
     "subject_id": "19102102",
     "original_range": 327124.0,
     "original_unit_guess": "raw_adc_16bit",
@@ -66,303 +660,6 @@
     "warning": "Final range 10.62 mV outside expected physiological range"
   },
   {
-    "subject_id": "19102103",
-    "original_range": 1176318.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 89.74594116210938,
-    "is_valid": false,
-    "warning": "Final range 89.75 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19102103",
-    "original_range": 519924.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 39.66705322265625,
-    "is_valid": false,
-    "warning": "Final range 39.67 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19102103",
-    "original_range": 1176318.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 89.74594116210938,
-    "is_valid": false,
-    "warning": "Final range 89.75 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20101424",
-    "original_range": 14708459.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 1122.1663665771484,
-    "is_valid": false,
-    "warning": "Final range 1122.17 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20101424",
-    "original_range": 74015.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 5.6468963623046875,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20101424",
-    "original_range": 14708459.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 1122.1663665771484,
-    "is_valid": false,
-    "warning": "Final range 1122.17 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20120116",
-    "original_range": 303745.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 23.173904418945312,
-    "is_valid": false,
-    "warning": "Final range 23.17 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20120116",
-    "original_range": 39029.0,
-    "original_unit_guess": "raw_adc_12bit",
-    "corrections": [
-      "adc_12bit_to_mv"
-    ],
-    "final_range": 47.642822265625,
-    "is_valid": false,
-    "warning": "Final range 47.64 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20120116",
-    "original_range": 303745.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 23.173904418945312,
-    "is_valid": false,
-    "warning": "Final range 23.17 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19101607",
-    "original_range": 70185.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 5.3546905517578125,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "19101607",
-    "original_range": 70185.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 5.3546905517578125,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "19101607",
-    "original_range": 62979.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 4.8049163818359375,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20121033",
-    "original_range": 60650.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 4.627227783203125,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20121033",
-    "original_range": 60650.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 4.627227783203125,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20121033",
-    "original_range": 45283.0,
-    "original_unit_guess": "raw_adc_12bit",
-    "corrections": [
-      "adc_12bit_to_mv"
-    ],
-    "final_range": 55.277099609375,
-    "is_valid": false,
-    "warning": "Final range 55.28 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19090320",
-    "original_range": 75769.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 5.7807159423828125,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "19090320",
-    "original_range": 75769.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 5.7807159423828125,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "19090320",
-    "original_range": 61790.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 4.714202880859375,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "19101619",
-    "original_range": 49087.0,
-    "original_unit_guess": "raw_adc_12bit",
-    "corrections": [
-      "adc_12bit_to_mv"
-    ],
-    "final_range": 59.920654296875,
-    "is_valid": false,
-    "warning": "Final range 59.92 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19101619",
-    "original_range": 30197.0,
-    "original_unit_guess": "raw_adc_12bit",
-    "corrections": [
-      "adc_12bit_to_mv"
-    ],
-    "final_range": 36.861572265625,
-    "is_valid": false,
-    "warning": "Final range 36.86 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19101619",
-    "original_range": 49087.0,
-    "original_unit_guess": "raw_adc_12bit",
-    "corrections": [
-      "adc_12bit_to_mv"
-    ],
-    "final_range": 59.920654296875,
-    "is_valid": false,
-    "warning": "Final range 59.92 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19080106",
-    "original_range": 52238.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 3.985443115234375,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "19080106",
-    "original_range": 47979.0,
-    "original_unit_guess": "raw_adc_12bit",
-    "corrections": [
-      "adc_12bit_to_mv"
-    ],
-    "final_range": 58.568115234375,
-    "is_valid": false,
-    "warning": "Final range 58.57 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19080106",
-    "original_range": 52238.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 3.985443115234375,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20010827",
-    "original_range": 128115.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 9.774398803710938,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20010827",
-    "original_range": 67181.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 5.1255035400390625,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20010827",
-    "original_range": 128115.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 9.774398803710938,
-    "is_valid": true,
-    "warning": null
-  },
-  {
     "subject_id": "20120922",
     "original_range": 625979.0,
     "original_unit_guess": "raw_adc_16bit",
@@ -396,202 +693,103 @@
     "warning": "Final range 47.76 mV outside expected physiological range"
   },
   {
-    "subject_id": "19090308",
-    "original_range": 89954.0,
+    "subject_id": "20123017",
+    "original_range": 799399.0,
     "original_unit_guess": "raw_adc_16bit",
     "corrections": [
       "adc_16bit_to_mv"
     ],
-    "final_range": 6.862945556640625,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "19090308",
-    "original_range": 52779.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 4.0267181396484375,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "19090308",
-    "original_range": 89954.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 6.862945556640625,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20092226",
-    "original_range": 383106.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 29.228668212890625,
+    "final_range": 60.98930358886719,
     "is_valid": false,
-    "warning": "Final range 29.23 mV outside expected physiological range"
+    "warning": "Final range 60.99 mV outside expected physiological range"
   },
   {
-    "subject_id": "20092226",
-    "original_range": 25585.0,
+    "subject_id": "20123017",
+    "original_range": 799399.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 60.98930358886719,
+    "is_valid": false,
+    "warning": "Final range 60.99 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20123017",
+    "original_range": 613107.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 46.77635192871094,
+    "is_valid": false,
+    "warning": "Final range 46.78 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20101822",
+    "original_range": 49912.0,
     "original_unit_guess": "raw_adc_12bit",
     "corrections": [
       "adc_12bit_to_mv"
     ],
-    "final_range": 31.231689453125,
+    "final_range": 60.927734375,
     "is_valid": false,
-    "warning": "Final range 31.23 mV outside expected physiological range"
+    "warning": "Final range 60.93 mV outside expected physiological range"
   },
   {
-    "subject_id": "20092226",
-    "original_range": 383106.0,
+    "subject_id": "20101822",
+    "original_range": 49912.0,
+    "original_unit_guess": "raw_adc_12bit",
+    "corrections": [
+      "adc_12bit_to_mv"
+    ],
+    "final_range": 60.927734375,
+    "is_valid": false,
+    "warning": "Final range 60.93 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20101822",
+    "original_range": 34392.0,
+    "original_unit_guess": "raw_adc_12bit",
+    "corrections": [
+      "adc_12bit_to_mv"
+    ],
+    "final_range": 41.982421875,
+    "is_valid": false,
+    "warning": "Final range 41.98 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20061729",
+    "original_range": 56010.0,
     "original_unit_guess": "raw_adc_16bit",
     "corrections": [
       "adc_16bit_to_mv"
     ],
-    "final_range": 29.228668212890625,
-    "is_valid": false,
-    "warning": "Final range 29.23 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19112609",
-    "original_range": 144433.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 11.019363403320312,
-    "is_valid": false,
-    "warning": "Final range 11.02 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19112609",
-    "original_range": 144433.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 11.019363403320312,
-    "is_valid": false,
-    "warning": "Final range 11.02 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19112609",
-    "original_range": 77469.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 5.9104156494140625,
+    "final_range": 4.273223876953125,
     "is_valid": true,
     "warning": null
   },
   {
-    "subject_id": "19121735",
-    "original_range": 528293.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 40.30555725097656,
-    "is_valid": false,
-    "warning": "Final range 40.31 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19121735",
-    "original_range": 528293.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 40.30555725097656,
-    "is_valid": false,
-    "warning": "Final range 40.31 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19121735",
-    "original_range": 509542.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 38.874969482421875,
-    "is_valid": false,
-    "warning": "Final range 38.87 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20092535",
-    "original_range": 31560.0,
+    "subject_id": "20061729",
+    "original_range": 49410.0,
     "original_unit_guess": "raw_adc_12bit",
     "corrections": [
       "adc_12bit_to_mv"
     ],
-    "final_range": 38.525390625,
+    "final_range": 60.31494140625,
     "is_valid": false,
-    "warning": "Final range 38.53 mV outside expected physiological range"
+    "warning": "Final range 60.31 mV outside expected physiological range"
   },
   {
-    "subject_id": "20092535",
-    "original_range": 18330.0,
-    "original_unit_guess": "raw_adc_12bit",
-    "corrections": [
-      "adc_12bit_to_mv"
-    ],
-    "final_range": 22.37548828125,
-    "is_valid": false,
-    "warning": "Final range 22.38 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20092535",
-    "original_range": 31560.0,
-    "original_unit_guess": "raw_adc_12bit",
-    "corrections": [
-      "adc_12bit_to_mv"
-    ],
-    "final_range": 38.525390625,
-    "is_valid": false,
-    "warning": "Final range 38.53 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20121716",
-    "original_range": 234745.0,
+    "subject_id": "20061729",
+    "original_range": 56010.0,
     "original_unit_guess": "raw_adc_16bit",
     "corrections": [
       "adc_16bit_to_mv"
     ],
-    "final_range": 17.909622192382812,
-    "is_valid": false,
-    "warning": "Final range 17.91 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20121716",
-    "original_range": 95884.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 7.31536865234375,
+    "final_range": 4.273223876953125,
     "is_valid": true,
     "warning": null
-  },
-  {
-    "subject_id": "20121716",
-    "original_range": 234745.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 17.909622192382812,
-    "is_valid": false,
-    "warning": "Final range 17.91 mV outside expected physiological range"
   },
   {
     "subject_id": "19072214",
@@ -627,68 +825,35 @@
     "warning": "Final range 13.57 mV outside expected physiological range"
   },
   {
-    "subject_id": "20011712",
-    "original_range": 73361.0,
+    "subject_id": "19112609",
+    "original_range": 144433.0,
     "original_unit_guess": "raw_adc_16bit",
     "corrections": [
       "adc_16bit_to_mv"
     ],
-    "final_range": 5.5970001220703125,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20011712",
-    "original_range": 56515.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 4.3117523193359375,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20011712",
-    "original_range": 73361.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 5.5970001220703125,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "19072940",
-    "original_range": 70281.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 5.3620147705078125,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "19072940",
-    "original_range": 26673.0,
-    "original_unit_guess": "raw_adc_12bit",
-    "corrections": [
-      "adc_12bit_to_mv"
-    ],
-    "final_range": 32.559814453125,
+    "final_range": 11.019363403320312,
     "is_valid": false,
-    "warning": "Final range 32.56 mV outside expected physiological range"
+    "warning": "Final range 11.02 mV outside expected physiological range"
   },
   {
-    "subject_id": "19072940",
-    "original_range": 70281.0,
+    "subject_id": "19112609",
+    "original_range": 144433.0,
     "original_unit_guess": "raw_adc_16bit",
     "corrections": [
       "adc_16bit_to_mv"
     ],
-    "final_range": 5.3620147705078125,
+    "final_range": 11.019363403320312,
+    "is_valid": false,
+    "warning": "Final range 11.02 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19112609",
+    "original_range": 77469.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 5.9104156494140625,
     "is_valid": true,
     "warning": null
   },
@@ -726,6 +891,237 @@
     "warning": "Final range 16.00 mV outside expected physiological range"
   },
   {
+    "subject_id": "19072938",
+    "original_range": 3692775.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 281.7363739013672,
+    "is_valid": false,
+    "warning": "Final range 281.74 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19072938",
+    "original_range": 3692775.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 281.7363739013672,
+    "is_valid": false,
+    "warning": "Final range 281.74 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19072938",
+    "original_range": 872739.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 66.58470153808594,
+    "is_valid": false,
+    "warning": "Final range 66.58 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19072939",
+    "original_range": 8544865.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 651.9214630126953,
+    "is_valid": false,
+    "warning": "Final range 651.92 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19072939",
+    "original_range": 8544865.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 651.9214630126953,
+    "is_valid": false,
+    "warning": "Final range 651.92 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19072939",
+    "original_range": 2828763.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 215.81748962402344,
+    "is_valid": false,
+    "warning": "Final range 215.82 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20120116",
+    "original_range": 303745.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 23.173904418945312,
+    "is_valid": false,
+    "warning": "Final range 23.17 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20120116",
+    "original_range": 39029.0,
+    "original_unit_guess": "raw_adc_12bit",
+    "corrections": [
+      "adc_12bit_to_mv"
+    ],
+    "final_range": 47.642822265625,
+    "is_valid": false,
+    "warning": "Final range 47.64 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20120116",
+    "original_range": 303745.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 23.173904418945312,
+    "is_valid": false,
+    "warning": "Final range 23.17 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20052606",
+    "original_range": 130816.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 9.98046875,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "20052606",
+    "original_range": 130816.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 9.98046875,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "20052606",
+    "original_range": 109528.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 8.3563232421875,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "20092226",
+    "original_range": 383106.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 29.228668212890625,
+    "is_valid": false,
+    "warning": "Final range 29.23 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20092226",
+    "original_range": 25585.0,
+    "original_unit_guess": "raw_adc_12bit",
+    "corrections": [
+      "adc_12bit_to_mv"
+    ],
+    "final_range": 31.231689453125,
+    "is_valid": false,
+    "warning": "Final range 31.23 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20092226",
+    "original_range": 383106.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 29.228668212890625,
+    "is_valid": false,
+    "warning": "Final range 29.23 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "20010827",
+    "original_range": 128115.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 9.774398803710938,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "20010827",
+    "original_range": 67181.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 5.1255035400390625,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "20010827",
+    "original_range": 128115.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 9.774398803710938,
+    "is_valid": true,
+    "warning": null
+  },
+  {
+    "subject_id": "19082406",
+    "original_range": 2170222.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 165.57479858398438,
+    "is_valid": false,
+    "warning": "Final range 165.57 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19082406",
+    "original_range": 834588.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 63.67401123046875,
+    "is_valid": false,
+    "warning": "Final range 63.67 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19082406",
+    "original_range": 2170222.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 165.57479858398438,
+    "is_valid": false,
+    "warning": "Final range 165.57 mV outside expected physiological range"
+  },
+  {
     "subject_id": "19070921",
     "original_range": 1607520.0,
     "original_unit_guess": "raw_adc_16bit",
@@ -757,6 +1153,39 @@
     "final_range": 122.64404296875,
     "is_valid": false,
     "warning": "Final range 122.64 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19102524",
+    "original_range": 462974.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 35.322113037109375,
+    "is_valid": false,
+    "warning": "Final range 35.32 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19102524",
+    "original_range": 462974.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 35.322113037109375,
+    "is_valid": false,
+    "warning": "Final range 35.32 mV outside expected physiological range"
+  },
+  {
+    "subject_id": "19102524",
+    "original_range": 396045.0,
+    "original_unit_guess": "raw_adc_16bit",
+    "corrections": [
+      "adc_16bit_to_mv"
+    ],
+    "final_range": 30.215835571289062,
+    "is_valid": false,
+    "warning": "Final range 30.22 mV outside expected physiological range"
   },
   {
     "subject_id": "19120723",
@@ -825,498 +1254,69 @@
     "warning": "Final range 32.92 mV outside expected physiological range"
   },
   {
-    "subject_id": "20052606",
-    "original_range": 130816.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 9.98046875,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20052606",
-    "original_range": 130816.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 9.98046875,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20052606",
-    "original_range": 109528.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 8.3563232421875,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20061729",
-    "original_range": 56010.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 4.273223876953125,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20061729",
-    "original_range": 49410.0,
+    "subject_id": "19101619",
+    "original_range": 49087.0,
     "original_unit_guess": "raw_adc_12bit",
     "corrections": [
       "adc_12bit_to_mv"
     ],
-    "final_range": 60.31494140625,
+    "final_range": 59.920654296875,
     "is_valid": false,
-    "warning": "Final range 60.31 mV outside expected physiological range"
+    "warning": "Final range 59.92 mV outside expected physiological range"
   },
   {
-    "subject_id": "20061729",
-    "original_range": 56010.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 4.273223876953125,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "19081506",
-    "original_range": 100651.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 7.6790618896484375,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "19081506",
-    "original_range": 21870.0,
+    "subject_id": "19101619",
+    "original_range": 30197.0,
     "original_unit_guess": "raw_adc_12bit",
     "corrections": [
       "adc_12bit_to_mv"
     ],
-    "final_range": 26.69677734375,
+    "final_range": 36.861572265625,
     "is_valid": false,
-    "warning": "Final range 26.70 mV outside expected physiological range"
+    "warning": "Final range 36.86 mV outside expected physiological range"
   },
   {
-    "subject_id": "19081506",
-    "original_range": 100651.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 7.6790618896484375,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "19082406",
-    "original_range": 2170222.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 165.57479858398438,
-    "is_valid": false,
-    "warning": "Final range 165.57 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19082406",
-    "original_range": 834588.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 63.67401123046875,
-    "is_valid": false,
-    "warning": "Final range 63.67 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19082406",
-    "original_range": 2170222.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 165.57479858398438,
-    "is_valid": false,
-    "warning": "Final range 165.57 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20122932",
-    "original_range": 283854.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 21.656341552734375,
-    "is_valid": false,
-    "warning": "Final range 21.66 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20122932",
-    "original_range": 34532.0,
+    "subject_id": "19101619",
+    "original_range": 49087.0,
     "original_unit_guess": "raw_adc_12bit",
     "corrections": [
       "adc_12bit_to_mv"
     ],
-    "final_range": 42.1533203125,
+    "final_range": 59.920654296875,
     "is_valid": false,
-    "warning": "Final range 42.15 mV outside expected physiological range"
+    "warning": "Final range 59.92 mV outside expected physiological range"
   },
   {
-    "subject_id": "20122932",
-    "original_range": 283854.0,
+    "subject_id": "20011712",
+    "original_range": 73361.0,
     "original_unit_guess": "raw_adc_16bit",
     "corrections": [
       "adc_16bit_to_mv"
     ],
-    "final_range": 21.656341552734375,
-    "is_valid": false,
-    "warning": "Final range 21.66 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20101822",
-    "original_range": 49912.0,
-    "original_unit_guess": "raw_adc_12bit",
-    "corrections": [
-      "adc_12bit_to_mv"
-    ],
-    "final_range": 60.927734375,
-    "is_valid": false,
-    "warning": "Final range 60.93 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20101822",
-    "original_range": 49912.0,
-    "original_unit_guess": "raw_adc_12bit",
-    "corrections": [
-      "adc_12bit_to_mv"
-    ],
-    "final_range": 60.927734375,
-    "is_valid": false,
-    "warning": "Final range 60.93 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20101822",
-    "original_range": 34392.0,
-    "original_unit_guess": "raw_adc_12bit",
-    "corrections": [
-      "adc_12bit_to_mv"
-    ],
-    "final_range": 41.982421875,
-    "is_valid": false,
-    "warning": "Final range 41.98 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19072939",
-    "original_range": 8544865.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 651.9214630126953,
-    "is_valid": false,
-    "warning": "Final range 651.92 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19072939",
-    "original_range": 8544865.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 651.9214630126953,
-    "is_valid": false,
-    "warning": "Final range 651.92 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19072939",
-    "original_range": 2828763.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 215.81748962402344,
-    "is_valid": false,
-    "warning": "Final range 215.82 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19072938",
-    "original_range": 3692775.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 281.7363739013672,
-    "is_valid": false,
-    "warning": "Final range 281.74 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19072938",
-    "original_range": 3692775.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 281.7363739013672,
-    "is_valid": false,
-    "warning": "Final range 281.74 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19072938",
-    "original_range": 872739.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 66.58470153808594,
-    "is_valid": false,
-    "warning": "Final range 66.58 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20010826",
-    "original_range": 154715.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 11.803817749023438,
-    "is_valid": false,
-    "warning": "Final range 11.80 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20010826",
-    "original_range": 131834.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 10.058135986328125,
-    "is_valid": false,
-    "warning": "Final range 10.06 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20010826",
-    "original_range": 154715.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 11.803817749023438,
-    "is_valid": false,
-    "warning": "Final range 11.80 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19102524",
-    "original_range": 462974.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 35.322113037109375,
-    "is_valid": false,
-    "warning": "Final range 35.32 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19102524",
-    "original_range": 462974.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 35.322113037109375,
-    "is_valid": false,
-    "warning": "Final range 35.32 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19102524",
-    "original_range": 396045.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 30.215835571289062,
-    "is_valid": false,
-    "warning": "Final range 30.22 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19072205",
-    "original_range": 9021471.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 688.2836151123047,
-    "is_valid": false,
-    "warning": "Final range 688.28 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19072205",
-    "original_range": 2857101.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 217.97950744628906,
-    "is_valid": false,
-    "warning": "Final range 217.98 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19072205",
-    "original_range": 9021471.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 688.2836151123047,
-    "is_valid": false,
-    "warning": "Final range 688.28 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19120302",
-    "original_range": 106604.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 8.13323974609375,
+    "final_range": 5.5970001220703125,
     "is_valid": true,
     "warning": null
   },
   {
-    "subject_id": "19120302",
-    "original_range": 106604.0,
+    "subject_id": "20011712",
+    "original_range": 56515.0,
     "original_unit_guess": "raw_adc_16bit",
     "corrections": [
       "adc_16bit_to_mv"
     ],
-    "final_range": 8.13323974609375,
+    "final_range": 4.3117523193359375,
     "is_valid": true,
     "warning": null
   },
   {
-    "subject_id": "19120302",
-    "original_range": 91536.0,
+    "subject_id": "20011712",
+    "original_range": 73361.0,
     "original_unit_guess": "raw_adc_16bit",
     "corrections": [
       "adc_16bit_to_mv"
     ],
-    "final_range": 6.983642578125,
+    "final_range": 5.5970001220703125,
     "is_valid": true,
     "warning": null
-  },
-  {
-    "subject_id": "19102622",
-    "original_range": 1269041.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 96.82014465332031,
-    "is_valid": false,
-    "warning": "Final range 96.82 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19102622",
-    "original_range": 450761.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 34.39033508300781,
-    "is_valid": false,
-    "warning": "Final range 34.39 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19102622",
-    "original_range": 1269041.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 96.82014465332031,
-    "is_valid": false,
-    "warning": "Final range 96.82 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19121303",
-    "original_range": 109754.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 8.373565673828125,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "19121303",
-    "original_range": 42269.0,
-    "original_unit_guess": "raw_adc_12bit",
-    "corrections": [
-      "adc_12bit_to_mv"
-    ],
-    "final_range": 51.597900390625,
-    "is_valid": false,
-    "warning": "Final range 51.60 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "19121303",
-    "original_range": 109754.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 8.373565673828125,
-    "is_valid": true,
-    "warning": null
-  },
-  {
-    "subject_id": "20123017",
-    "original_range": 799399.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 60.98930358886719,
-    "is_valid": false,
-    "warning": "Final range 60.99 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20123017",
-    "original_range": 799399.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 60.98930358886719,
-    "is_valid": false,
-    "warning": "Final range 60.99 mV outside expected physiological range"
-  },
-  {
-    "subject_id": "20123017",
-    "original_range": 613107.0,
-    "original_unit_guess": "raw_adc_16bit",
-    "corrections": [
-      "adc_16bit_to_mv"
-    ],
-    "final_range": 46.77635192871094,
-    "is_valid": false,
-    "warning": "Final range 46.78 mV outside expected physiological range"
   }
 ]
