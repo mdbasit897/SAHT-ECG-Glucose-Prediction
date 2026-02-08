@@ -54,6 +54,13 @@ from statsmodels.stats.multitest import multipletests
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.ticker as mticker
+
+try:
+    import seaborn as sns
+    HAS_SEABORN = True
+except ImportError:
+    HAS_SEABORN = False
 
 warnings.filterwarnings('ignore')
 
@@ -843,6 +850,465 @@ class ComprehensiveBaselineFramework:
         print(f"   Saved: {output_path}")
 
     # =========================================================================
+    # FIGURE: Dual-Cohort Model Comparison
+    # =========================================================================
+
+    def create_dual_cohort_comparison_figure(self, output_path="dual_cohort_comparison.png"):
+        """
+        Combined model comparison for both HbA1c and FBG cohorts in one figure.
+        4-panel layout: R² HbA1c | R² FBG | MAE HbA1c | MAE FBG
+        """
+        cohorts = [c for c in ['hba1c_cohort', 'fbg_cohort'] if c in self.results]
+        if len(cohorts) < 2:
+            print("    Need both cohorts for dual comparison figure")
+            return
+
+        fig, axes = plt.subplots(2, 2, figsize=(18, 14))
+
+        cohort_titles = {'hba1c_cohort': 'HbA1c Cohort', 'fbg_cohort': 'FBG Cohort'}
+
+        def _model_color(model_name):
+            if 'Naive' in model_name:
+                return '#95a5a6'
+            elif 'MLP' in model_name:
+                return '#e74c3c'
+            elif any(x in model_name for x in ['Forest', 'Gradient', 'Extra', 'AdaBoost']):
+                return '#27ae60'
+            elif 'SVR' in model_name:
+                return '#9b59b6'
+            else:
+                return '#3498db'
+
+        for col, cohort in enumerate(cohorts):
+            df = self.results[cohort]['baseline_comparison'].dropna(subset=['R²'])
+
+            # Top row: R²
+            r2_sorted = df.sort_values('R²', ascending=True)
+            colors = [_model_color(m) for m in r2_sorted['Model']]
+            ax = axes[0, col]
+            bars = ax.barh(range(len(r2_sorted)), r2_sorted['R²'],
+                           color=colors, alpha=0.8, edgecolor='black', linewidth=0.5)
+            ax.set_yticks(range(len(r2_sorted)))
+            ax.set_yticklabels(r2_sorted['Model'], fontsize=8)
+            ax.set_xlabel('R² Score', fontsize=11, fontweight='bold')
+            ax.set_title(f"{cohort_titles[cohort]} — R² (Higher is Better)",
+                         fontsize=12, fontweight='bold')
+            ax.axvline(x=0, color='black', linestyle='-', alpha=0.3)
+            ax.grid(True, alpha=0.3, axis='x')
+            for i, r2_val in enumerate(r2_sorted['R²']):
+                ax.text(r2_val + 0.005, i, f'{r2_val:.3f}', va='center', fontsize=7)
+
+            # Bottom row: MAE
+            mae_sorted = df.sort_values('MAE', ascending=False)
+            colors_mae = [_model_color(m) for m in mae_sorted['Model']]
+            ax = axes[1, col]
+            ax.barh(range(len(mae_sorted)), mae_sorted['MAE'],
+                    color=colors_mae, alpha=0.8, edgecolor='black', linewidth=0.5)
+            ax.set_yticks(range(len(mae_sorted)))
+            ax.set_yticklabels(mae_sorted['Model'], fontsize=8)
+            ax.set_xlabel('Mean Absolute Error (log-scale)', fontsize=11, fontweight='bold')
+            ax.set_title(f"{cohort_titles[cohort]} — MAE (Lower is Better)",
+                         fontsize=12, fontweight='bold')
+            ax.grid(True, alpha=0.3, axis='x')
+
+        legend_elements = [
+            mpatches.Patch(color='#3498db', label='Linear Models'),
+            mpatches.Patch(color='#27ae60', label='Tree-Based'),
+            mpatches.Patch(color='#e74c3c', label='Neural Networks (default params)'),
+            mpatches.Patch(color='#9b59b6', label='SVM'),
+            mpatches.Patch(color='#95a5a6', label='Naive Baselines')
+        ]
+        fig.legend(handles=legend_elements, loc='upper center', ncol=5,
+                   bbox_to_anchor=(0.5, 0.02), fontsize=10, frameon=True)
+        plt.tight_layout()
+        plt.subplots_adjust(bottom=0.06, hspace=0.35)
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"   Saved dual-cohort comparison: {output_path}")
+
+    # =========================================================================
+    # FIGURE: Feature Importance by Domain (Figure 6 in manuscript)
+    # Addresses: R1 — "clearer breakdown of importance of individual features
+    #            within each category (clinical vs. ECG vs. HRV)"
+    # =========================================================================
+
+    def create_feature_importance_by_domain_figure(self, output_path="feature_importance_by_domain.png"):
+        """
+        Two-panel horizontal bar chart showing top-15 features per cohort,
+        colored by domain (HRV/ECG/Clinical/Demographics/Sleep/Age-Normalized).
+        Uses feature selection frequency across LOSO folds as importance metric.
+        """
+        cohorts = [c for c in ['hba1c_cohort', 'fbg_cohort'] if c in self.results]
+        if not cohorts:
+            print("    No results available for feature importance figure")
+            return
+
+        domain_colors = {
+            'HRV': '#3498db',
+            'ECG': '#9b59b6',
+            'Clinical': '#f39c12',
+            'Demographics': '#95a5a6',
+            'Sleep': '#27ae60',
+            'Age-Normalized': '#e74c3c'
+        }
+
+        def _classify_domain(feature_name):
+            f = feature_name.lower()
+            if 'age_normalized' in f:
+                return 'Age-Normalized'
+            elif any(x in f for x in ['hrv_ds_', 'hrv_rem_', 'hrv_rs_']):
+                return 'HRV'
+            elif 'ecg_' in f:
+                return 'ECG'
+            elif any(x in f for x in ['sbp', 'dbp', 'wbc', 'hb', 'plt', 'crp',
+                                       'alt', 'ast', 'ggt', 'bun', 'ua', 'tg',
+                                       'hdl', 'ldl', 'uma', 'ucr', 'uacr', 'n%']):
+                return 'Clinical'
+            elif any(x in f for x in ['psqi_', 'cpc_']):
+                return 'Sleep'
+            elif any(x in f for x in ['age', 'height', 'weight']):
+                return 'Demographics'
+            else:
+                return 'Clinical'
+
+        n_panels = len(cohorts)
+        fig, axes = plt.subplots(1, n_panels, figsize=(8 * n_panels, 8))
+        if n_panels == 1:
+            axes = [axes]
+
+        cohort_titles = {'hba1c_cohort': 'HbA1c Cohort (n=29)',
+                         'fbg_cohort': 'FBG Cohort (n=38)'}
+
+        for idx, cohort in enumerate(cohorts):
+            ax = axes[idx]
+            results = self.results[cohort]
+
+            # Get feature importance from fold selections or feature_importance_report
+            stability = results.get('feature_selection_stability', {})
+            stability_table = stability.get('stability_table', None)
+
+            if stability_table is not None and len(stability_table) > 0:
+                top_features = stability_table.head(15).copy()
+                features = top_features['Feature'].tolist()
+                values = top_features['Selection_Rate'].tolist()
+                xlabel = 'Selection Frequency (across LOSO folds)'
+            elif 'feature_importance_report' in results:
+                fi = results['feature_importance_report'].head(15).copy()
+                features = fi['feature'].tolist()
+                values = fi['correlation'].tolist()
+                xlabel = '|Pearson Correlation| with Target'
+            else:
+                print(f"    No feature data for {cohort}")
+                continue
+
+            domains = [_classify_domain(f) for f in features]
+            colors = [domain_colors.get(d, '#95a5a6') for d in domains]
+
+            # Reverse for horizontal bar chart (top feature on top)
+            features = features[::-1]
+            values = values[::-1]
+            colors = colors[::-1]
+            domains_rev = domains[::-1]
+
+            bars = ax.barh(range(len(features)), values, color=colors,
+                           alpha=0.85, edgecolor='black', linewidth=0.5)
+            ax.set_yticks(range(len(features)))
+
+            # Clean feature names for display
+            display_names = []
+            for f in features:
+                name = f.replace('hrv_ds_', 'HRV-DS: ').replace('hrv_rem_', 'HRV-REM: ')
+                name = name.replace('hrv_rs_', 'HRV-RS: ').replace('ecg_all_', 'ECG-all: ')
+                name = name.replace('ecg_sleep_', 'ECG-sleep: ').replace('ecg_day_', 'ECG-day: ')
+                name = name.replace('_age_normalized', ' (age-norm)')
+                name = name.replace('_', ' ').title()
+                display_names.append(name)
+
+            ax.set_yticklabels(display_names, fontsize=9)
+            ax.set_xlabel(xlabel, fontsize=11, fontweight='bold')
+            ax.set_title(f"Top-15 Features — {cohort_titles.get(cohort, cohort)}",
+                         fontsize=12, fontweight='bold')
+            ax.grid(True, alpha=0.3, axis='x')
+
+            # Value labels on bars
+            for i, v in enumerate(values):
+                ax.text(v + 0.01, i, f'{v:.2f}', va='center', fontsize=8)
+
+        # Legend
+        legend_elements = [mpatches.Patch(color=c, label=d)
+                           for d, c in domain_colors.items()]
+        fig.legend(handles=legend_elements, loc='upper center', ncol=6,
+                   bbox_to_anchor=(0.5, 0.02), fontsize=10, frameon=True,
+                   title='Feature Domain', title_fontsize=11)
+        plt.tight_layout()
+        plt.subplots_adjust(bottom=0.08)
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"   Saved feature importance by domain: {output_path}")
+
+    # =========================================================================
+    # FIGURE: Feature Selection Stability Heatmap
+    # Addresses: R3#4, E#7 — visual proof of CV hygiene
+    # =========================================================================
+
+    def create_feature_stability_heatmap(self, output_path="feature_selection_stability.png"):
+        """
+        Binary heatmap: features (rows) × LOSO folds (columns).
+        Shows which features were selected in which folds — proves
+        feature selection varies across folds (CV hygiene evidence).
+        """
+        cohorts = [c for c in ['hba1c_cohort', 'fbg_cohort'] if c in self.results]
+        if not cohorts:
+            print("   No results for stability heatmap")
+            return
+
+        n_panels = len(cohorts)
+        fig, axes = plt.subplots(1, n_panels, figsize=(8 * n_panels, 10))
+        if n_panels == 1:
+            axes = [axes]
+
+        cohort_titles = {'hba1c_cohort': 'HbA1c Cohort', 'fbg_cohort': 'FBG Cohort'}
+
+        for idx, cohort in enumerate(cohorts):
+            ax = axes[idx]
+
+            # Try to get per-fold feature selections from Bayesian Ridge
+            fold_features = self.fold_feature_selections.get('Bayesian Ridge', [])
+            if not fold_features:
+                # Fallback: check if any model has fold data
+                for model_name, ffs in self.fold_feature_selections.items():
+                    if ffs:
+                        fold_features = ffs
+                        break
+
+            if not fold_features:
+                ax.text(0.5, 0.5, 'No per-fold feature\nselection data available',
+                        ha='center', va='center', fontsize=12, transform=ax.transAxes)
+                ax.set_title(f"Feature Selection Stability — {cohort_titles.get(cohort, cohort)}")
+                continue
+
+            # Collect all unique features
+            all_features = set()
+            for fold in fold_features:
+                all_features.update(fold)
+            all_features = sorted(all_features)
+
+            # Build binary matrix
+            n_folds = len(fold_features)
+            matrix = np.zeros((len(all_features), n_folds), dtype=int)
+            for fold_idx, fold in enumerate(fold_features):
+                for feat in fold:
+                    if feat in all_features:
+                        feat_idx = all_features.index(feat)
+                        matrix[feat_idx, fold_idx] = 1
+
+            # Sort by selection frequency (most stable on top)
+            freq = matrix.sum(axis=1)
+            sort_idx = np.argsort(-freq)
+            matrix = matrix[sort_idx]
+            sorted_features = [all_features[i] for i in sort_idx]
+
+            # Limit to top 30 features for readability
+            max_show = min(30, len(sorted_features))
+            matrix_show = matrix[:max_show]
+            features_show = sorted_features[:max_show]
+
+            # Clean feature names
+            display_names = []
+            for f in features_show:
+                name = f.replace('hrv_ds_', 'HRV-DS:').replace('hrv_rem_', 'HRV-REM:')
+                name = name.replace('hrv_rs_', 'HRV-RS:').replace('ecg_all_', 'ECG:')
+                name = name.replace('ecg_sleep_', 'ECG-slp:').replace('ecg_day_', 'ECG-day:')
+                name = name.replace('_age_normalized', '(AN)')
+                name = name.replace('_', ' ')
+                if len(name) > 30:
+                    name = name[:28] + '..'
+                display_names.append(name)
+
+            # Plot
+            if HAS_SEABORN:
+                sns.heatmap(matrix_show, ax=ax, cmap=['#FFFFFF', '#2196F3'],
+                            cbar=False, linewidths=0.5, linecolor='#E0E0E0',
+                            xticklabels=[f'F{i+1}' for i in range(n_folds)],
+                            yticklabels=display_names)
+            else:
+                ax.imshow(matrix_show, aspect='auto', cmap='Blues',
+                          interpolation='nearest')
+                ax.set_xticks(range(n_folds))
+                ax.set_xticklabels([f'F{i+1}' for i in range(n_folds)], fontsize=7)
+                ax.set_yticks(range(max_show))
+                ax.set_yticklabels(display_names, fontsize=8)
+
+            ax.set_xlabel(f'LOSO Fold (N={n_folds} subjects)', fontsize=11, fontweight='bold')
+            ax.set_ylabel('Feature', fontsize=11, fontweight='bold')
+            ax.set_title(f"Feature Selection Stability — {cohort_titles.get(cohort, cohort)}\n"
+                         f"(Blue = selected in fold; White = not selected)",
+                         fontsize=12, fontweight='bold')
+            ax.tick_params(axis='y', labelsize=8)
+            ax.tick_params(axis='x', labelsize=7, rotation=90)
+
+            # Add frequency annotation on right
+            for i in range(max_show):
+                sel_rate = freq[sort_idx[i]] / n_folds
+                ax.text(n_folds + 0.3, i, f'{sel_rate:.0%}',
+                        va='center', fontsize=7, color='#333')
+
+        plt.tight_layout()
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"   Saved feature stability heatmap: {output_path}")
+
+    # =========================================================================
+    # Age Normalization Sensitivity Heatmap (Supplementary)
+    # Addresses R3#3 — "give a brief justification + small sensitivity check"
+    # =========================================================================
+
+    def create_age_sensitivity_heatmap(self, cohort, output_path="age_sensitivity_heatmap.png"):
+        """
+        Heatmap of R² across (threshold × epsilon) grid for age normalization.
+        Shows that no parameter combination improves over baseline.
+        """
+        if cohort not in self.results:
+            return
+        sensitivity_df = self.results[cohort].get('age_sensitivity')
+        if sensitivity_df is None or len(sensitivity_df) == 0:
+            print(f"    No age sensitivity data for {cohort}")
+            return
+
+        # Filter out the 'None' baseline row for the heatmap
+        grid_df = sensitivity_df[sensitivity_df['Threshold'] != 'None'].copy()
+        grid_df['Threshold'] = grid_df['Threshold'].astype(int)
+        grid_df['Epsilon'] = grid_df['Epsilon'].astype(float)
+
+        baseline_r2 = sensitivity_df[sensitivity_df['Threshold'] == 'None']['R²'].values[0]
+
+        # Pivot to matrix
+        pivot = grid_df.pivot(index='Threshold', columns='Epsilon', values='R²')
+
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        if HAS_SEABORN:
+            sns.heatmap(pivot, annot=True, fmt='.3f', cmap='RdYlGn', center=0,
+                        ax=ax, linewidths=1, linecolor='white',
+                        cbar_kws={'label': 'R² Score'})
+        else:
+            im = ax.imshow(pivot.values, cmap='RdYlGn', aspect='auto')
+            ax.set_xticks(range(len(pivot.columns)))
+            ax.set_xticklabels([f'{c:.2f}' for c in pivot.columns])
+            ax.set_yticks(range(len(pivot.index)))
+            ax.set_yticklabels(pivot.index)
+            for i in range(len(pivot.index)):
+                for j in range(len(pivot.columns)):
+                    ax.text(j, i, f'{pivot.values[i, j]:.3f}',
+                            ha='center', va='center', fontsize=9)
+            plt.colorbar(im, ax=ax, label='R² Score')
+
+        cohort_title = 'HbA1c' if 'hba1c' in cohort else 'FBG'
+        ax.set_xlabel('Epsilon (ε)', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Age Threshold', fontsize=12, fontweight='bold')
+        ax.set_title(f"Age Normalization Sensitivity — {cohort_title}\n"
+                     f"HRV_norm = HRV / (age/threshold + ε)\n"
+                     f"Baseline R² (no normalization) = {baseline_r2:.3f}",
+                     fontsize=12, fontweight='bold')
+
+        plt.tight_layout()
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"   Saved age sensitivity heatmap: {output_path}")
+
+    # =========================================================================
+    # FIGURE: Prediction vs Actual Scatter
+    # Standard regression figure expected by all reviewers
+    # =========================================================================
+
+    def create_prediction_scatter(self, cohort, output_path="prediction_scatter.png"):
+        """
+        Predicted vs actual scatter plot with identity line and residual subplot.
+        Uses the best model's predictions from baseline comparison.
+        """
+        if cohort not in self.results:
+            return
+        results = self.results[cohort]
+        baseline = results.get('baseline_comparison')
+        if baseline is None:
+            return
+
+        # Get best model predictions
+        valid = baseline.dropna(subset=['R²'])
+        best_idx = valid['R²'].idxmax()
+        best_row = valid.loc[best_idx]
+        best_model = best_row['Model']
+        best_r2 = best_row['R²']
+        best_mae = best_row['MAE']
+        predictions = best_row.get('Predictions')
+
+        if predictions is None:
+            print(f"    No predictions stored for {cohort}")
+            return
+
+        # Get actual targets
+        try:
+            X, y, y_log, groups, feature_names = self.load_cohort_data(cohort)
+            y_true = y_log  # log-transformed targets
+        except Exception:
+            print(f"    Could not load target data for {cohort}")
+            return
+
+        if len(y_true) != len(predictions):
+            print(f"    Length mismatch: y_true={len(y_true)}, pred={len(predictions)}")
+            return
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+        # Panel 1: Predicted vs Actual
+        ax1.scatter(y_true, predictions, alpha=0.7, s=80, c='#3498db',
+                    edgecolors='black', linewidth=0.5, zorder=3)
+
+        # Identity line
+        all_vals = np.concatenate([y_true, predictions])
+        lims = [np.min(all_vals) - 0.05, np.max(all_vals) + 0.05]
+        ax1.plot(lims, lims, 'k--', alpha=0.5, linewidth=1.5, label='Perfect prediction')
+
+        # Regression line
+        z = np.polyfit(y_true, predictions, 1)
+        p = np.poly1d(z)
+        x_line = np.linspace(lims[0], lims[1], 100)
+        ax1.plot(x_line, p(x_line), 'r-', alpha=0.7, linewidth=1.5, label='Fit line')
+
+        corr_val = best_row.get('Correlation', np.nan)
+        p_val = best_row.get('p-value', np.nan)
+
+        ax1.set_xlabel('Actual (log-scale)', fontsize=12, fontweight='bold')
+        ax1.set_ylabel('Predicted (log-scale)', fontsize=12, fontweight='bold')
+        cohort_title = 'HbA1c' if 'hba1c' in cohort else 'FBG'
+        ax1.set_title(f"Predicted vs Actual — {cohort_title}\n"
+                      f"{best_model}: R²={best_r2:.3f}, MAE={best_mae:.3f}, "
+                      f"r={corr_val:.3f}", fontsize=11, fontweight='bold')
+        ax1.legend(fontsize=9, loc='upper left')
+        ax1.grid(True, alpha=0.3)
+        ax1.set_xlim(lims)
+        ax1.set_ylim(lims)
+        ax1.set_aspect('equal', adjustable='box')
+
+        # Panel 2: Residuals
+        residuals = predictions - y_true
+        ax2.scatter(predictions, residuals, alpha=0.7, s=80, c='#e74c3c',
+                    edgecolors='black', linewidth=0.5, zorder=3)
+        ax2.axhline(y=0, color='black', linestyle='--', linewidth=1.5, alpha=0.5)
+
+        ax2.set_xlabel('Predicted (log-scale)', fontsize=12, fontweight='bold')
+        ax2.set_ylabel('Residual (Predicted − Actual)', fontsize=12, fontweight='bold')
+        ax2.set_title(f"Residual Plot — {cohort_title}\n"
+                      f"Mean residual = {np.mean(residuals):.4f}, "
+                      f"Std = {np.std(residuals):.4f}", fontsize=11, fontweight='bold')
+        ax2.grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"   Saved prediction scatter: {output_path}")
+
+    # =========================================================================
     # MAIN ANALYSIS PIPELINE
     # =========================================================================
 
@@ -936,7 +1402,7 @@ class ComprehensiveBaselineFramework:
             if 'age_adjustment' in results:
                 results['age_adjustment'].to_csv(cohort_dir / "age_adjustment.csv", index=False)
 
-            # Age sensitivity (NEW — Supplementary Table S2)
+            # Age sensitivity ( Supplementary Table S2)
             if 'age_sensitivity' in results:
                 results['age_sensitivity'].to_csv(cohort_dir / "age_sensitivity.csv", index=False)
 
@@ -954,6 +1420,15 @@ class ComprehensiveBaselineFramework:
             if 'baseline_comparison' in results:
                 self.create_baseline_comparison_figure(
                     results['baseline_comparison'], str(cohort_dir / "baseline_comparison.png")
+                )
+
+            # NEW: Prediction vs Actual scatter
+            self.create_prediction_scatter(cohort, str(cohort_dir / "prediction_scatter.png"))
+
+            # NEW: Age sensitivity heatmap
+            if 'age_sensitivity' in results:
+                self.create_age_sensitivity_heatmap(
+                    cohort, str(cohort_dir / "age_sensitivity_heatmap.png")
                 )
 
             # Summary JSON
@@ -978,6 +1453,22 @@ class ComprehensiveBaselineFramework:
                 json.dump(summary, f, indent=2, default=str)
 
             print(f"    Saved {cohort}")
+
+        # Cross-cohort figures (need both cohorts)
+        if len(self.results) >= 2:
+            self.create_dual_cohort_comparison_figure(
+                str(output_dir / "dual_cohort_model_comparison.png")
+            )
+
+        # Feature importance by domain (uses stability data from all cohorts)
+        self.create_feature_importance_by_domain_figure(
+            str(output_dir / "feature_importance_by_domain.png")
+        )
+
+        # Feature selection stability heatmap
+        self.create_feature_stability_heatmap(
+            str(output_dir / "feature_selection_stability_heatmap.png")
+        )
 
         print(f"\n All results saved to {output_dir}")
 
