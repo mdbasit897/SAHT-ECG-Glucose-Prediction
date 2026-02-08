@@ -59,7 +59,7 @@ class ValidationFramework:
         self.data_dir = Path(data_dir)
         self.validation_results = {}
         print("=" * 70)
-        print("VALIDATION FRAMEWORK v3.0 (Pipeline-based CV hygiene)")
+        print("VALIDATION FRAMEWORK (Pipeline-based CV hygiene)")
         print("=" * 70)
 
     def load_cohort_data(self, cohort: str = 'hba1c_cohort') -> Tuple:

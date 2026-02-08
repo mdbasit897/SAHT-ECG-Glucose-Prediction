@@ -88,7 +88,6 @@ class ComprehensiveBaselineFramework:
         self.fold_feature_selections = {}  # track per-fold feature selection
 
         print("=" * 70)
-        print("COMPREHENSIVE BASELINE FRAMEWORK v3.0 (REVISED)")
         print("CV hygiene: feature selection + scaling INSIDE each fold")
         print("=" * 70)
         print()
