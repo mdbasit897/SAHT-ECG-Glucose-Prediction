@@ -1,10 +1,10 @@
 {
   "cohort": "hba1c_cohort",
-  "timestamp": "2026-02-08T12:34:43.651444",
+  "timestamp": "2026-02-10T17:42:37.562585",
   "n_samples": 29,
   "n_features": 94,
   "n_subjects": 29,
-  "cv_hygiene": "Pipeline(SelectKBest + StandardScaler + BayesianRidge) within each LOSO fold",
+  "cv_hygiene": "Pipeline(SelectKBest + StandardScaler + ExtraTreesRegressor) within each LOSO fold",
   "permutation_test": {
     "true_r2": NaN,
     "permutation_r2_mean": NaN,
@@ -19,33 +19,33 @@
     "n_successful": 500,
     "metrics": {
       "r2": {
-        "mean": -1.9010752481773339,
-        "median": 0.15280732268540975,
-        "std": 11.167697725949562,
-        "ci_95_lower": -18.131481738556367,
-        "ci_95_upper": 0.7313294993038901
+        "mean": 0.5228323878056252,
+        "median": 0.5467599586661545,
+        "std": 0.17190667694661446,
+        "ci_95_lower": 0.12379746140210078,
+        "ci_95_upper": 0.8024657573592625
       },
       "mae": {
-        "mean": 0.13939521953505046,
-        "ci_95_lower": 0.06541943938580384,
-        "ci_95_upper": 0.28748827270017174
+        "mean": 0.09296866162570987,
+        "ci_95_lower": 0.061665215471420606,
+        "ci_95_upper": 0.1252300819318195
       }
     }
   },
   "residual_analysis": {
-    "mean": -0.008292437761877066,
-    "std": 0.20156919021003658,
-    "skewness": 0.05136563305763922,
-    "kurtosis": -0.664322733780073,
+    "mean": 0.005346195318044401,
+    "std": 0.17475880818964007,
+    "skewness": 0.3533313533843844,
+    "kurtosis": -0.6609012655225128,
     "shapiro_test": {
-      "statistic": 0.9862982034683228,
-      "p_value": 0.961401641368866,
+      "statistic": 0.9719400405883789,
+      "p_value": 0.6133780479431152,
       "normal": true
     },
     "bias_significant": false,
     "heteroscedasticity": {
-      "correlation": -0.17052470271606784,
-      "p_value": 0.3764734007199022,
+      "correlation": -0.0921261968053715,
+      "p_value": 0.634569605374061,
       "significant": false
     }
   },
@@ -58,26 +58,26 @@
       23
     ],
     "test_scores_mean": [
-      -4.902836986655361,
-      -119.60549854154878,
-      -6.206451985557445,
-      -13.122502615262567,
-      -4.8648205860342015
+      -0.8519324761956988,
+      -0.4549015316726395,
+      -0.12971368000591038,
+      -0.059970934617912516,
+      -0.2066248566033148
     ],
     "test_scores_std": [
-      5.864105353318243,
-      218.64915234768586,
-      8.649766440130104,
-      25.48195863936055,
-      8.701936649515622
+      1.0943071819012034,
+      0.803815448813045,
+      0.6810212907932262,
+      0.6880914063110567,
+      0.7429973439213758
     ],
-    "recommendation": "More data would likely help"
+    "recommendation": "Performance appears saturated"
   },
   "summary": {
     "significant": true,
     "r2_95_ci": [
-      -18.131481738556367,
-      0.7313294993038901
+      0.12379746140210078,
+      0.8024657573592625
     ],
     "residuals_normal": true
   }
