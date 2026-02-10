@@ -1,10 +1,10 @@
 {
   "cohort": "fbg_cohort",
-  "timestamp": "2026-02-08T12:35:45.300924",
+  "timestamp": "2026-02-10T17:56:47.608829",
   "n_samples": 38,
   "n_features": 94,
   "n_subjects": 38,
-  "cv_hygiene": "Pipeline(SelectKBest + StandardScaler + BayesianRidge) within each LOSO fold",
+  "cv_hygiene": "Pipeline(SelectKBest + StandardScaler + ExtraTreesRegressor) within each LOSO fold",
   "permutation_test": {
     "true_r2": NaN,
     "permutation_r2_mean": NaN,
@@ -19,34 +19,34 @@
     "n_successful": 500,
     "metrics": {
       "r2": {
-        "mean": -16.07596544877611,
-        "median": 0.050265377257721566,
-        "std": 94.62400637955056,
-        "ci_95_lower": -118.84760679278224,
-        "ci_95_upper": 0.5528288635563308
+        "mean": 0.4630868166829346,
+        "median": 0.4725923771528491,
+        "std": 0.1507446162502353,
+        "ci_95_lower": 0.16478096497997521,
+        "ci_95_upper": 0.72009826085567
       },
       "mae": {
-        "mean": 0.29576523091065904,
-        "ci_95_lower": 0.15338381103325907,
-        "ci_95_upper": 0.7517036251890888
+        "mean": 0.16502508792106585,
+        "ci_95_lower": 0.11567194584238456,
+        "ci_95_upper": 0.21733809868435836
       }
     }
   },
   "residual_analysis": {
-    "mean": -0.1202546371624708,
-    "std": 0.7664777599073356,
-    "skewness": -4.487175920237673,
-    "kurtosis": 22.172910741655958,
+    "mean": -0.001197250401065728,
+    "std": 0.3094589930442598,
+    "skewness": -0.369203547879663,
+    "kurtosis": 0.012173313160214416,
     "shapiro_test": {
-      "statistic": 0.514111340045929,
-      "p_value": 4.761494531990706e-10,
-      "normal": false
+      "statistic": 0.9823223352432251,
+      "p_value": 0.7980337738990784,
+      "normal": true
     },
     "bias_significant": false,
     "heteroscedasticity": {
-      "correlation": -0.9594630056952151,
-      "p_value": 2.1755002475849163e-21,
-      "significant": true
+      "correlation": 0.009399410761298231,
+      "p_value": 0.9553358569945432,
+      "significant": false
     }
   },
   "learning_curve": {
@@ -58,27 +58,27 @@
       30
     ],
     "test_scores_mean": [
-      -47.63142041913595,
-      -23.01129405833253,
-      -0.7934931627731968,
-      -1.9465300108955748,
-      -4.261981033116173
+      -1.6988882721564984,
+      -0.8576989961748556,
+      -0.8006373180012837,
+      -0.5342600064240995,
+      -0.49421593869219677
     ],
     "test_scores_std": [
-      32.11989785404369,
-      38.38384191506223,
-      0.8447204231474292,
-      2.3052307902922555,
-      7.038141823003818
+      1.030729804944422,
+      0.869502927781219,
+      0.9382164099991888,
+      0.8891013395734466,
+      0.794375589648119
     ],
-    "recommendation": "Performance appears saturated"
+    "recommendation": "More data would likely help"
   },
   "summary": {
     "significant": true,
     "r2_95_ci": [
-      -118.84760679278224,
-      0.5528288635563308
+      0.16478096497997521,
+      0.72009826085567
     ],
-    "residuals_normal": false
+    "residuals_normal": true
   }
 }
