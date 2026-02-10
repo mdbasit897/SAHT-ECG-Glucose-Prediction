@@ -4,12 +4,15 @@ Revised Validation Framework
 ==================================
 FIXED: All validation analyses now use sklearn Pipeline to ensure
 feature selection + scaling happen within each CV fold automatically.
+UPDATED: Uses Extra Trees (best-performing model from baseline comparison)
+instead of Bayesian Ridge for all validation analyses.
 
 Addresses:
   - R3 #4: CV hygiene
   - R3 #5: Back-transformed error interpretation
   - R3 #7: Bootstrap CIs with proper subject-level resampling
   - E: Methodological details require clearer reporting
+  - Model mismatch fix: validation now uses same model as reported best
 """
 
 import numpy as np
@@ -21,7 +24,7 @@ from datetime import datetime
 import warnings
 
 from sklearn.base import clone
-from sklearn.linear_model import BayesianRidge
+from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import SelectKBest, f_regression
 from sklearn.pipeline import Pipeline
@@ -78,13 +81,14 @@ class ValidationFramework:
         """
         Create a pipeline that wraps feature selection + scaling + model.
         sklearn handles the fit/transform correctly within each CV fold.
+        Uses Extra Trees — the best-performing model from baseline comparison.
         """
         k = max_features
         return Pipeline([
             ('feature_selection', SelectKBest(f_regression, k=k)),
             ('scaler', StandardScaler()),
-            ('model', BayesianRidge(alpha_1=1e-6, alpha_2=1e-6,
-                                    lambda_1=1e-6, lambda_2=1e-6))
+            ('model', ExtraTreesRegressor(
+                n_estimators=100, max_depth=5, min_samples_leaf=3, random_state=42))
         ])
 
     def _loso_predict(self, X, y, groups, max_features=15):
@@ -299,7 +303,7 @@ class ValidationFramework:
             'n_samples': len(target),
             'n_features': X.shape[1],
             'n_subjects': len(np.unique(groups)),
-            'cv_hygiene': 'Pipeline(SelectKBest + StandardScaler + BayesianRidge) within each LOSO fold'
+            'cv_hygiene': 'Pipeline(SelectKBest + StandardScaler + ExtraTreesRegressor) within each LOSO fold'
         }
 
         report['permutation_test'] = self.run_permutation_test(X, target, groups, max_features)
@@ -721,7 +725,6 @@ class ValidationFramework:
             self.create_combined_permutation_figure()
 
         return results
-
 
 if __name__ == "__main__":
     framework = ValidationFramework("processed_data_v2")
