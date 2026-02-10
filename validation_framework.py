@@ -116,9 +116,15 @@ class ValidationFramework:
             random_state=42, n_jobs=-1
         )
 
+        # Fallback: if score is NaN, compute true R² independently via LOSO
+        if np.isnan(score):
+            print("   ⚠ permutation_test_score returned NaN for true R²; computing independently...")
+            predictions = cross_val_predict(pipeline, X, y, cv=cv, groups=groups)
+            score = r2_score(y, predictions)
+
         perm_mean = np.mean(perm_scores)
         perm_std = np.std(perm_scores)
-        effect_size = (score - perm_mean) / perm_std if perm_std > 0 else 0
+        effect_size = (score - perm_mean) / perm_std if perm_std > 0 and not np.isnan(perm_std) else 0.0
 
         results = {
             'true_r2': float(score),
@@ -336,9 +342,12 @@ class ValidationFramework:
         elif isinstance(obj, (list, tuple)):
             return [self._clean(v) for v in obj]
         elif isinstance(obj, np.ndarray):
-            return obj.tolist()
+            return self._clean(obj.tolist())
         elif isinstance(obj, (np.floating, np.integer)):
-            return float(obj)
+            val = float(obj)
+            return None if np.isnan(val) or np.isinf(val) else val
+        elif isinstance(obj, float):
+            return None if np.isnan(obj) or np.isinf(obj) else obj
         elif isinstance(obj, np.bool_):
             return bool(obj)
         return obj
@@ -725,6 +734,7 @@ class ValidationFramework:
             self.create_combined_permutation_figure()
 
         return results
+
 
 if __name__ == "__main__":
     framework = ValidationFramework("processed_data_v2")
