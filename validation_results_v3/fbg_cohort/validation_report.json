@@ -1,14 +1,14 @@
 {
   "cohort": "fbg_cohort",
-  "timestamp": "2026-02-10T17:56:47.608829",
+  "timestamp": "2026-02-10T19:54:46.587888",
   "n_samples": 38,
   "n_features": 94,
   "n_subjects": 38,
   "cv_hygiene": "Pipeline(SelectKBest + StandardScaler + ExtraTreesRegressor) within each LOSO fold",
   "permutation_test": {
-    "true_r2": NaN,
-    "permutation_r2_mean": NaN,
-    "permutation_r2_std": NaN,
+    "true_r2": 0.08559727373508408,
+    "permutation_r2_mean": null,
+    "permutation_r2_std": null,
     "p_value": 0.001996007984031936,
     "effect_size_z": 0.0,
     "n_permutations": 500,
@@ -19,16 +19,16 @@
     "n_successful": 500,
     "metrics": {
       "r2": {
-        "mean": 0.4630868166829346,
-        "median": 0.4725923771528491,
-        "std": 0.1507446162502353,
-        "ci_95_lower": 0.16478096497997521,
-        "ci_95_upper": 0.72009826085567
+        "mean": 0.45467871164918416,
+        "median": 0.4724651315862749,
+        "std": 0.1611418771514545,
+        "ci_95_lower": 0.0963211254016545,
+        "ci_95_upper": 0.7160660763422282
       },
       "mae": {
-        "mean": 0.16502508792106585,
-        "ci_95_lower": 0.11567194584238456,
-        "ci_95_upper": 0.21733809868435836
+        "mean": 0.16415636122437252,
+        "ci_95_lower": 0.11234401057287668,
+        "ci_95_upper": 0.21627597913161054
       }
     }
   },
@@ -76,8 +76,8 @@
   "summary": {
     "significant": true,
     "r2_95_ci": [
-      0.16478096497997521,
-      0.72009826085567
+      0.0963211254016545,
+      0.7160660763422282
     ],
     "residuals_normal": true
   }
