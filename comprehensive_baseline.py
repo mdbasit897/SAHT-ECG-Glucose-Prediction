@@ -85,7 +85,7 @@ class ComprehensiveBaselineFramework:
         self.data_dir = Path(data_dir)
         self.results = {}
         self.feature_importance = {}
-        self.fold_feature_selections = {}  # track per-fold feature selection
+        self.fold_feature_selections = {}  # {cohort: {model_name: fold_features}}
 
         print("=" * 70)
         print("CV hygiene: feature selection + scaling INSIDE each fold")
@@ -334,7 +334,10 @@ class ComprehensiveBaselineFramework:
 
                 # Store per-fold feature selections for best model reporting
                 if result.get('fold_selected_features'):
-                    self.fold_feature_selections[name] = result['fold_selected_features']
+                    cohort_key = getattr(self, '_current_cohort', 'unknown')
+                    if cohort_key not in self.fold_feature_selections:
+                        self.fold_feature_selections[cohort_key] = {}
+                    self.fold_feature_selections[cohort_key][name] = result['fold_selected_features']
 
                 print(
                     f"   {name:25} | R²: {result['R²']:7.3f} | MAE: {result['MAE']:.3f} | r: {result['Correlation']:.3f}")
@@ -616,16 +619,18 @@ class ComprehensiveBaselineFramework:
     # NEW: Feature selection stability across folds
     # =========================================================================
 
-    def analyze_feature_selection_stability(self, model_name: str = 'Bayesian Ridge') -> Dict:
+    def analyze_feature_selection_stability(self, model_name: str = 'Bayesian Ridge', cohort: str = None) -> Dict:
         """
         Analyze which features were selected in each LOSO fold.
         Provides evidence that feature selection was done within folds.
         """
-        if model_name not in self.fold_feature_selections:
-            print(f"   No fold feature data for {model_name}")
+        cohort_key = cohort or getattr(self, '_current_cohort', None)
+        cohort_selections = self.fold_feature_selections.get(cohort_key, {})
+        if model_name not in cohort_selections:
+            print(f"   No fold feature data for {model_name} in {cohort_key}")
             return {}
 
-        fold_features = self.fold_feature_selections[model_name]
+        fold_features = cohort_selections[model_name]
         n_folds = len(fold_features)
 
         # Count feature frequency across folds
@@ -1071,11 +1076,12 @@ class ComprehensiveBaselineFramework:
         for idx, cohort in enumerate(cohorts):
             ax = axes[idx]
 
-            # Try to get per-fold feature selections from Bayesian Ridge
-            fold_features = self.fold_feature_selections.get('Bayesian Ridge', [])
+            # Get per-fold feature selections for THIS cohort
+            cohort_selections = self.fold_feature_selections.get(cohort, {})
+            fold_features = cohort_selections.get('Bayesian Ridge', [])
             if not fold_features:
-                # Fallback: check if any model has fold data
-                for model_name, ffs in self.fold_feature_selections.items():
+                # Fallback: check if any model has fold data for this cohort
+                for model_name, ffs in cohort_selections.items():
                     if ffs:
                         fold_features = ffs
                         break
@@ -1324,6 +1330,7 @@ class ComprehensiveBaselineFramework:
 
         # Load data
         X, y, y_log, groups, feature_names = self.load_cohort_data(cohort)
+        self._current_cohort = cohort  # Track for per-cohort fold_feature_selections
         target = y_log if use_log_target else y
         results['n_samples'] = len(target)
         results['n_features'] = len(feature_names)
@@ -1341,7 +1348,7 @@ class ComprehensiveBaselineFramework:
         results['baseline_comparison'] = baseline_results
 
         # Feature selection stability
-        stability = self.analyze_feature_selection_stability('Bayesian Ridge')
+        stability = self.analyze_feature_selection_stability('Bayesian Ridge', cohort)
         results['feature_selection_stability'] = stability
 
         # Age adjustment comparison
