@@ -254,7 +254,7 @@ Using Bayesian Ridge for transparent, interpretable domain attribution:
 The dataset used and analyzed during this study is publicly available in the **Mendeley Data** repository:
 
 * **Repository Name:** Dataset on electrocardiograph, sleep and metabolic function of male type 2 diabetes mellitus
-* **Access Link:** [Mendeley Data](https://data.mendeley.com/datasets/9c47vwvtss/4)[[1]](#1)
+* **Access Link:** [Mendeley Data](https://data.mendeley.com/datasets/9c47vwvtss/4) [[1]](#1)
 
 
 ##  Contributing
