@@ -1,5 +1,5 @@
-# Re-evaluating HRV Biomarkers for Glucose Sensing: The Impact of Age Normalisation and Subject-Independent Validation
-### Research prototype • Public domain (CC0-1.0) • Not for clinical use
+# Re-evaluating Heart Rate Variability Biomarkers for Glucose Sensing: The Impact of Age Normalisation and Subject-Independent Validation
+### Research prototype • Not for clinical use
 
 **1<sup>st</sup> Md Basit Azam**<sup></sup>  
 *Department of Computer Science & Engineering*  
@@ -18,7 +18,21 @@ Napaam - 784 028, Tezpur, Assam, INDIA
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
+### Key Results
 
+| Metric | HbA1c cohort (n = 29) | FBG cohort (n = 38) |
+|--------|:----------------------:|:--------------------:|
+| Best model | Extra Trees | Extra Trees |
+| R² | 0.222 | 0.086 |
+| MAE (original scale) | 1.18 percentage points | 2.27 mmol/L (41 mg/dL) |
+| Pearson *r* (*p*) | 0.476 (0.009) | 0.344 (0.034) |
+| Permutation test *p* | 0.002 | 0.002 |
+| Bootstrap 95% CI for R² | [0.13, 0.82] | [0.10, 0.72] |
+| Age normalisation benefit | None (all 20 combinations ≤ baseline) | None |
+
+> Bootstrap CIs exclude zero for both cohorts but remain wide, reflecting small-sample uncertainty. These findings should be interpreted as hypothesis-generating.
+
+---
 ## 🚀 Quick Start
 
 ### 1. Install Dependencies
@@ -43,11 +57,31 @@ Place your dataset in the working directory with this structure:
     └── ...
 ```
 
-### 3. Run Complete Analysis
+### 3. Run Preprocessing
+
+```bash
+python complete_preprocessing.py
+```
+
+This creates `processed_data_v2/` with extracted features, separated cohort targets, and LOSO fold definitions.
+
+### 4. Run Complete Analysis
 
 ```bash
 python run_complete_analysis.py
 ```
+
+This executes three steps sequentially:
+
+| Step | Script | Description |
+|------|--------|-------------|
+| 1 | `comprehensive_baseline_revised.py` | 20-model baseline comparison with LOSO + 6 age-adjustment methods + 20-parameter sensitivity grid |
+| 2 | `ablation_study_revised.py` | 13-configuration feature domain ablation |
+| 3 | `validation_framework_revised.py` | Permutation testing (n=500), bootstrap CIs (n=500), residual diagnostics, learning curves |
+
+> **Note:** The runner checks that `processed_data_v2/` exists before proceeding. All scripts must be run in order as each depends on the previous step's outputs.
+
+---
 
 Or run individual components:
 
@@ -64,173 +98,156 @@ python run_complete_analysis.py --skip-preprocessing --only-ablation
 
 ---
 
-##  Output Structure
-
-After running the complete analysis:
+## Output Structure
 
 ```
 ./
-├── processed_data_v2/
-│   ├── features.csv                 # All extracted features
-│   ├── signal_specifications.json   # ECG/HRV documentation
-│   ├── ecg_scaling_logs.json        # ECG processing logs
+├── processed_data_v2/                       # From complete_preprocessing.py
+│   ├── features.csv                         # 105 extracted features
+│   ├── signal_specifications.json           # ECG/HRV signal documentation
+│   ├── ecg_scaling_logs.json                # ECG amplitude scaling audit
 │   ├── targets/
-│   │   ├── hba1c_cohort.csv         # HbA1c targets (SEPARATED)
-│   │   └── fbg_cohort.csv           # FBG targets (SEPARATED)
+│   │   ├── hba1c_cohort.csv                 # HbA1c targets (n=29)
+│   │   └── fbg_cohort.csv                   # FBG targets (n=38)
 │   └── loso_splits/
-│       ├── hba1c_cohort/            # LOSO validation splits
+│       ├── hba1c_cohort/                    # LOSO fold definitions
 │       └── fbg_cohort/
 │
-├── analysis_results/
+├── analysis_results_v3/                     # From comprehensive_baseline_revised.py
 │   ├── hba1c_cohort/
-│   │   ├── baseline_comparison.csv
-│   │   ├── baseline_comparison.png
-│   │   ├── age_adjustment_comparison.csv
-│   │   ├── age_adjustment_comparison.png
-│   │   ├── prediction_scatter.png
-│   │   └── summary.json
+│   │   ├── baseline_comparison.csv          # 20-model R², MAE, correlation
+│   │   ├── baseline_comparison.png          # Model comparison bar charts
+│   │   ├── age_adjustment_comparison.csv    # 6 methods × R² results
+│   │   ├── prediction_scatter.png           # Predicted vs actual plot
+│   │   └── summary.json                     # Cohort-level summary
+│   ├── fbg_cohort/
+│   │   └── ...
+│   ├── dual_cohort_model_comparison.png     # Side-by-side cohort comparison
+│   ├── feature_importance_by_domain.png     # Domain contribution analysis
+│   ├── feature_selection_stability_heatmap.png  # Fold-by-feature binary heatmap
+│   └── age_sensitivity_heatmap.png          # 5×4 parameter grid heatmap
+│
+├── ablation_results_v3/                     # From ablation_study_revised.py
+│   ├── hba1c_cohort/
+│   │   ├── ablation_results.csv             # 13 configurations × metrics
+│   │   └── ablation_figure.png              # Domain ablation bar chart
 │   └── fbg_cohort/
 │       └── ...
 │
-├── ablation_results/
-│   ├── hba1c_cohort/
-│   │   ├── ablation_results.csv
-│   │   ├── ablation_figure.png
-│   │   └── key_findings.json
-│   └── fbg_cohort/
-│       └── ...
-│
-├── validation_results/
+└── validation_results_v3/                   # From validation_framework_revised.py
     ├── hba1c_cohort/
-    │   ├── validation_report.json
-    │   ├── permutation_test.png
-    │   ├── bootstrap_ci.png
-    │   └── residual_analysis.png
-    └── fbg_cohort/
+    │   ├── validation_report.json           # Full statistical report
+    ├── fbg_cohort/
         └── ...
 
 ```
 
 ---
 
-## 🔬 Methodology Improvements
+## File Descriptions
 
-### 1. Separated Glucose Targets 
+| File | Purpose |
+|------|---------|
+| `complete_preprocessing.py` | Loads raw clinical, ECG, and sleep data from the Mendeley dataset; extracts 105 features across 6 domains; validates ECG signal amplitude and documents scaling; creates separated HbA1c/FBG cohort targets and LOSO fold splits |
+| `comprehensive_baseline_revised.py` | Runs 20 models under LOSO with within-fold SelectKBest (k=15) and StandardScaler; compares 6 age-adjustment methods; performs 20-combination sensitivity analysis; generates publication figures |
+| `ablation_study_revised.py` | Evaluates 13 feature-domain configurations using Bayesian Ridge under LOSO with within-fold preprocessing; quantifies contributions of clinical, ECG, HRV, sleep, and demographic feature groups |
+| `validation_framework_revised.py` | Permutation testing (n=500), bootstrap 95% CIs (n=500, subject-level resampling), residual diagnostics (Shapiro-Wilk, bias, heteroscedasticity), learning curve analysis |
+| `run_complete_analysis.py` | Sequential runner for the three analysis steps; checks `processed_data_v2/` exists before proceeding |
 
-**Previous Issue:** Mixed HbA1c (%) and FBG (mmol/L) as single target variable.
+---
 
-**Solution:**
-- HbA1c cohort: Long-term glycemic control (~3-month average)
-- FBG cohort: Acute glycemic status (instantaneous measurement)
-- Each analyzed independently with appropriate clinical interpretation
+---
 
-### 2. Proper Cross-Validation
+## Methodology
 
-**Previous Issue:** Random K-fold CV could leak information between subjects.
+### Separated Glycemic Targets
 
-**Solution:**
-- **LOSO (Leave-One-Subject-Out):** Complete subject separation
-- **Temporal validation:** Train on earlier subjects, test on later ones
-- **Standard K-fold:** For comparison only
+HbA1c (reflecting 3-month average glycemic control) and fasting blood glucose (FBG; reflecting acute metabolic status) are analysed as strictly separate cohorts, preventing the common methodological error of combining fundamentally different glucose metrics.
 
-### 3. Comprehensive Baselines 
+### Cross-Validation Hygiene
 
-| Model Category | Models Included |
-|----------------|-----------------|
-| Naive | Mean, Median |
-| Linear | Linear Regression, Ridge, Lasso, ElasticNet, Bayesian Ridge |
-| Tree-based | Random Forest, Gradient Boosting, Extra Trees, AdaBoost |
-| SVM | RBF, Linear, Polynomial kernels |
-| **Neural Networks** | MLP (32), MLP (64,32), MLP (128,64,32) |
+All preprocessing occurs strictly within each LOSO fold:
 
-### 4. Age Adjustment Comparison 
+```
+For each held-out subject:
+  1. SelectKBest(f_regression, k=15) fitted on training subjects only
+  2. StandardScaler fitted on training subjects only
+  3. Held-out subject transformed using training-derived parameters
+  4. Model fitted and prediction recorded
+```
+
+This prevents information leakage from held-out test subjects into feature selection or scaling — the single most impactful methodological correction in this study.
+
+### 20 Baseline Models
+
+| Category | Models |
+|----------|--------|
+| Naïve (2) | Mean predictor, Median predictor |
+| Linear (7) | OLS, Ridge (α=0.1, 1.0), Lasso (α=0.1), ElasticNet, Bayesian Ridge, Huber Regressor |
+| Tree ensembles (4) | Random Forest, Extra Trees, Gradient Boosting, AdaBoost |
+| SVM (3) | SVR with RBF, linear, and polynomial (degree 2) kernels |
+| Neural networks (4) | MLP (32), MLP (64,32), MLP (128,64,32), MLP (64,32) tanh |
+
+All models use minimally configured hyperparameters (scikit-learn defaults with no nested tuning), deliberately providing conservative baselines on small samples.
+
+### 6 Age-Adjustment Methods
 
 | Method | Description |
 |--------|-------------|
-| No adjustment | Baseline |
-| Your method | HRV / (age/65 + 0.1) |
-| Residualization | Regress age out of HRV features |
-| Age-Bin Z-Score | Z-score within age quartiles |
-| Polynomial Interaction | Age², HRV×age terms |
-| Simple Division | HRV / age |
+| No adjustment | Baseline (raw features) |
+| Proposed formula | HRV / (age/65 + 0.1), threshold from Umetani et al. (1998) |
+| Residualisation | Regress age out of HRV features via linear regression |
+| Age-bin z-score | Z-score within age quartiles (young/middle/senior/elderly) |
+| Polynomial interaction | Age² + HRV × age interaction terms |
+| Simple division | HRV / age |
 
-### 5. Statistical Validation
+Additionally, a sensitivity analysis tests 20 parameter combinations (5 age thresholds: 55, 60, 65, 70, 75 × 4 stability constants: 0.05, 0.1, 0.15, 0.2). No combination improves over baseline.
 
-- **Permutation Testing:** Verifies results are not due to chance
-- **Bootstrap CI:** 95% confidence intervals for all metrics
-- **CV Stability Analysis:** Tests reproducibility across random splits
-- **Learning Curves:** Sample size recommendations
+### 13-Configuration Ablation Study
 
----
+Using Bayesian Ridge for transparent, interpretable domain attribution:
 
-## 📝 Key Files Explained
+| Configuration | Features included |
+|---------------|-------------------|
+| Full Model | All 105 features (baseline) |
+| No Age Normalisation | All except age-normalised HRV |
+| Only Age-Normalised + Demographics | Age-normalised HRV + demographics only |
+| No Sleep-Stage HRV | All except per-stage HRV features |
+| HRV Only | Stage-specific HRV + age-normalised HRV + demographics |
+| ECG Only | ECG morphology + demographics |
+| Clinical Only | Clinical measurements + demographics |
+| No ECG | All except ECG morphology features |
+| No Clinical | All except clinical measurement features |
+| Demographics Only | Age, height, weight only |
+| Only Deep Sleep HRV | Deep sleep HRV + age-normalised + demographics |
+| Only REM HRV | REM sleep HRV + age-normalised + demographics |
+| Only Rapid Sleep HRV | Rapid sleep HRV + age-normalised + demographics |
 
-### `complete_preprocessing.py`
+### Statistical Validation
 
-Main preprocessing pipeline:
-- Loads clinical, ECG, and sleep data
-- Extracts HRV features from RR intervals
-- Creates age-normalized features
-- **Separates HbA1c and FBG cohorts**
-- Creates LOSO and temporal validation splits
-- Documents all signal specifications
-
-### `comprehensive_baseline.py`
-
-Baseline model comparison:
-- 20+ models including neural networks
-- LOSO cross-validation
-- Age adjustment method comparison
-- Permutation testing
-- Bootstrap confidence intervals
-- Publication-quality figures
-
-### `ablation_study.py`
-
-Component contribution analysis:
-- Tests each feature category's contribution
-- Compares sleep stages (Deep Sleep, REM, RS)
-- Quantifies age normalization benefit
-- Separate analysis per cohort
-
-### `validation_framework.py`
-
-Statistical validation:
-- Permutation tests (n=1000)
-- Bootstrap CIs (n=1000)
-- CV stability analysis
-- Residual diagnostics
-- Learning curve analysis
+- **Permutation testing:** n = 500 permutations; both cohorts p = 0.002
+- **Bootstrap CIs:** n = 500 subject-level resamples; 95% confidence intervals
+- **Residual diagnostics:** Shapiro-Wilk normality, mean-bias test, heteroscedasticity analysis
+- **Learning curves:** Sample-size adequacy assessment
 
 ---
 
+## Feature Domains (105 features)
 
-##  Troubleshooting
-
-### Data Not Found
-```
-FileNotFoundError: Clinical indicators file not found
-```
-**Solution:** Ensure dataset is in correct location (see Quick Start section).
-
-### Memory Issues
-```
-MemoryError during neural network training
-```
-**Solution:** Reduce `n_bootstrap` or `n_permutations` parameters.
-
-### Missing Dependencies
-```
-ModuleNotFoundError: No module named 'sklearn'
-```
-**Solution:** Run `pip install -r requirements.txt`
+| Domain | Count | Examples |
+|--------|:-----:|---------|
+| Demographics | 3 | Age, height, weight |
+| Clinical measurements | 20 | Blood pressure, lipid panel, renal/liver function, haematology |
+| ECG morphology | 24 | Signal statistics (mean, SD, range, SNR) for 24h / sleep / daytime |
+| HRV time-domain | 33 | Mean RR, SDNN, RMSSD, pNN50, CV per sleep stage (DS, REM, RS) |
+| Age-normalised HRV | 3 | Mean RR normalised by age factor per sleep stage |
+| Sleep quality | 22 | PSQI components (11), CPC-derived metrics (11) |
 
 ---
 
 ***📚 Citation***
 
-**If you use this work, please cite our paper:**
-
+**If you use this work, please cite this repository**
 
 
 
