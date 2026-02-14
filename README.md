@@ -245,22 +245,28 @@ Using Bayesian Ridge for transparent, interpretable domain attribution:
 
 ---
 
-***📚 Citation***
+### Citation
 
 **If you use this work, please cite this repository**
 
+##  Dataset
+
+The dataset used and analyzed during this study is publicly available in the **Mendeley Data** repository:
+
+* **Repository Name:** Dataset on electrocardiograph, sleep and metabolic function of male type 2 diabetes mellitus
+* **Access Link:** [Mendeley Data](https://data.mendeley.com/datasets/9c47vwvtss/4)[[1]](#1)
 
 
-## 🤝 Contributing
+##  Contributing
 We welcome contributions!
 
-## 📄 License  
+##  License  
 This project uses an MIT License. See the [LICENSE file](LICENSE) for details.  
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE). 
 
 This project is for academic research purposes. Please contact the author for commercial use.
 
-## 🙏 Acknowledgments  
+##  Acknowledgments  
 The authors acknowledge support from the Google Cloud Research Credits program under 
 Award GCP19980904 and partial computing resources from Google’s TPU Research Cloud (TRC), 
 both of which provided critical infrastructure for this research.
