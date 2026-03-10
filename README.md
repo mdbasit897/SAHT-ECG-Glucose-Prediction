@@ -75,9 +75,9 @@ This executes three steps sequentially:
 
 | Step | Script | Description |
 |------|--------|-------------|
-| 1 | `comprehensive_baseline_revised.py` | 20-model baseline comparison with LOSO + 6 age-adjustment methods + 20-parameter sensitivity grid |
-| 2 | `ablation_study_revised.py` | 13-configuration feature domain ablation |
-| 3 | `validation_framework_revised.py` | Permutation testing (n=500), bootstrap CIs (n=500), residual diagnostics, learning curves |
+| 1 | `comprehensive_baseline.py` | 20-model baseline comparison with LOSO + 6 age-adjustment methods + 20-parameter sensitivity grid |
+| 2 | `ablation_study.py` | 13-configuration feature domain ablation |
+| 3 | `validation_framework.py` | Permutation testing (n=500), bootstrap CIs (n=500), residual diagnostics, learning curves |
 
 > **Note:** The runner checks that `processed_data_v2/` exists before proceeding. All scripts must be run in order as each depends on the previous step's outputs.
 
