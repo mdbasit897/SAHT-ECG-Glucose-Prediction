@@ -18,7 +18,8 @@ Napaam - 784 028, Tezpur, Assam, INDIA
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
-### Key Results
+
+### Key Results — Baseline Model Comparison 
 
 | Metric | HbA1c cohort (n = 29) | FBG cohort (n = 38) |
 |--------|:----------------------:|:--------------------:|
@@ -28,9 +29,9 @@ Napaam - 784 028, Tezpur, Assam, INDIA
 | Pearson *r* (*p*) | 0.476 (0.009) | 0.344 (0.034) |
 | Permutation test *p* | 0.002 | 0.002 |
 | Bootstrap 95% CI for R² | [0.13, 0.82] | [0.10, 0.72] |
-| Age normalisation benefit | None (all 20 combinations ≤ baseline) | None |
+| Age normalisation benefit | None (19/20 combinations ≤ baseline; one trivial exception ΔR²=+0.0001 for HbA1c) | None (all 20 combinations worse) |
 
-> Bootstrap CIs exclude zero for both cohorts but remain wide, reflecting small-sample uncertainty. These findings should be interpreted as hypothesis-generating.
+> **Clinical context:** Bootstrap CIs exclude zero for both cohorts, providing statistical evidence for genuine HRV–glycemic associations. However, the FBG lower bound (0.10) is close to zero, and both CIs are wide due to small sample sizes (n = 29–38), reflecting substantial uncertainty. A clinically viable non-invasive glycemic estimator would require R² > 0.7 with errors confined to Clarke Error Grid zones A and B a threshold not reached in this study. **These findings should be interpreted as hypothesis-generating preliminary evidence only.**
 
 ---
 ## 🚀 Quick Start
@@ -160,9 +161,15 @@ python run_complete_analysis.py --skip-preprocessing --only-ablation
 
 ## Methodology
 
+### Important Scope Note
+
+This study analyses **cross-sectional associations** between ECG-derived features and glycemic status across subjects — not real-time glucose sensing or within-subject temporal prediction. The ECG–glucose relationship examined is correlational and cross-sectional, using spot measurements (HbA1c and FBG) obtained during hospitalisation. This constraint reflects dataset availability and represents a conservative analytical approach less susceptible to overfitting on within-subject temporal autocorrelation.
+
 ### Separated Glycemic Targets
 
-HbA1c (reflecting 3-month average glycemic control) and fasting blood glucose (FBG; reflecting acute metabolic status) are analysed as strictly separate cohorts, preventing the common methodological error of combining fundamentally different glucose metrics.
+HbA1c (reflecting 3-month average glycemic control) and fasting blood glucose (FBG; reflecting acute metabolic status) are analysed as strictly separate cohorts, preventing the common methodological error of combining fundamentally different glucose metrics. Both targets were log-transformed to address distributional skewness and improve regression stability.
+
+This separation prevents the common error of combining fundamentally different glucose metrics, which confounds the physiological interpretation.
 
 ### Cross-Validation Hygiene
 
@@ -188,7 +195,7 @@ This prevents information leakage from held-out test subjects into feature selec
 | SVM (3) | SVR with RBF, linear, and polynomial (degree 2) kernels |
 | Neural networks (4) | MLP (32), MLP (64,32), MLP (128,64,32), MLP (64,32) tanh |
 
-All models use minimally configured hyperparameters (scikit-learn defaults with no nested tuning), deliberately providing conservative baselines on small samples.
+All models use minimally configured hyperparameters (scikit-learn defaults with no nested tuning), deliberately providing conservative baselines on small samples. Neural network results should be interpreted as performance under these specific constraints — small tabular data with no architecture search — rather than as a general assessment of neural architectures for physiological prediction tasks. The extreme negative R² values observed for MLPs reflect numerical instability under LOSO on very small samples, not a general unsuitability of these models.
 
 ### 6 Age-Adjustment Methods
 
@@ -201,11 +208,11 @@ All models use minimally configured hyperparameters (scikit-learn defaults with 
 | Polynomial interaction | Age² + HRV × age interaction terms |
 | Simple division | HRV / age |
 
-Additionally, a sensitivity analysis tests 20 parameter combinations (5 age thresholds: 55, 60, 65, 70, 75 × 4 stability constants: 0.05, 0.1, 0.15, 0.2). No combination improves over baseline.
+Additionally, a sensitivity analysis tests 20 parameter combinations (5 age thresholds: 55, 60, 65, 70, 75 × 4 stability constants: 0.05, 0.1, 0.15, 0.2). For HbA1c, 19/20 combinations performed at or below baseline; one trivial exception (threshold 65, ε=0.15, ΔR²=+0.0001) was observed. For FBG, all 20 combinations worsened performance. No combination provided clinically meaningful improvement.
 
 ### 13-Configuration Ablation Study
 
-Using Bayesian Ridge for transparent, interpretable domain attribution:
+Bayesian Ridge was used as the ablation model because its linear coefficient structure makes the effect of domain removal directly visible in R² changes. Note that Bayesian Ridge shows poor performance in the baseline comparison (R² = −0.035 for HbA1c) due to feature selection instability on small samples — this is expected and does not contradict the ablation results, where its linear structure is specifically exploited for interpretability. Tree-based ensembles were deliberately excluded from ablation because their robustness to irrelevant features attenuates the measurable impact of domain removal.
 
 | Configuration | Features included |
 |---------------|-------------------|
@@ -223,6 +230,8 @@ Using Bayesian Ridge for transparent, interpretable domain attribution:
 | Only REM HRV | REM sleep HRV + age-normalised + demographics |
 | Only Rapid Sleep HRV | Rapid sleep HRV + age-normalised + demographics |
 
+**Key ablation findings:** For HbA1c, Clinical Only (R² = 0.163) was the best-performing configuration, outperforming the Full Model (R² = −0.035 under Bayesian Ridge) — indicating that adding ECG/HRV features to clinical data introduces noise under strict within-fold feature selection on small samples. For FBG, Demographics Only and ECG Only each achieved R² = 0.110, the best ablation result for that cohort.
+
 ### Statistical Validation
 
 - **Permutation testing:** n = 500 permutations; both cohorts p = 0.002
@@ -239,7 +248,7 @@ Using Bayesian Ridge for transparent, interpretable domain attribution:
 | Demographics | 3 | Age, height, weight |
 | Clinical measurements | 20 | Blood pressure, lipid panel, renal/liver function, haematology |
 | ECG morphology | 24 | Signal statistics (mean, SD, range, SNR) for 24h / sleep / daytime |
-| HRV time-domain | 33 | Mean RR, SDNN, RMSSD, pNN50, CV per sleep stage (DS, REM, RS) |
+| HRV Features | 33 | Mean RR, SDNN, RMSSD, pNN50, CV per sleep stage (DS, REM, RS) |
 | Age-normalised HRV | 3 | Mean RR normalised by age factor per sleep stage |
 | Sleep quality | 22 | PSQI components (11), CPC-derived metrics (11) |
 
@@ -272,7 +281,7 @@ Award GCP19980904 and partial computing resources from Google’s TPU Research C
 both of which provided critical infrastructure for this research.
 
 ### Funding:
-The authors declare no funding was received for this research.
+This study did not receive any specific grants from public, commercial, or not-for-profit funding agencies.
 
 ## References
 <a id="1">[1]</a> 
