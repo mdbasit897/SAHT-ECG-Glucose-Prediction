@@ -256,7 +256,22 @@ Bayesian Ridge was used as the ablation model because its linear coefficient str
 
 ### Citation
 
-**If you use this work, please cite this repository**
+**If you use this work, please cite our paper:**
+
+[![BMC](https://img.shields.io/badge/Published_in-BMC_Med_Inform_Decis_Mak-2a62a9.svg)](https://doi.org/10.1186/s12911-026-03455-8)
+
+```bibtex
+@article{azam_re-evaluating_2026,
+	title = {Re-evaluating heart rate variability biomarkers for glucose sensing: the impact of age normalisation and subject-independent validation},
+	issn = {1472-6947},
+	url = {https://doi.org/10.1186/s12911-026-03455-8},
+	doi = {10.1186/s12911-026-03455-8},
+	journal = {BMC Medical Informatics and Decision Making},
+	author = {Azam, Md Basit and Singh, Sarangthem Ibotombi},
+	month = apr,
+	year = {2026},
+}
+```
 
 ##  Dataset
 
